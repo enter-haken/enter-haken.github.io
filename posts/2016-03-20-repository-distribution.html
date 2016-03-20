@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>enter_haken - Repository ownership</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="navigation">
+                <a href="../">enter_haken</a>
+                <a href="../about.html">about</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>Repository ownership</h1>
+
+<div class="info">
+    
+    Posted on March 20, 2016
+    
+        
+</div>
+
+<p>Weeks ago we had a discussion about code ownership. Over years ownership may skip over to other developers e.g. due to job change. For a approximation you can start with the files, checked in to repository. I will use the <a href="https://github.com/angular/angular.git">Angular.js</a> repository for demonstrations.</p>
+<p>First make a local clone.</p>
+<pre><code>$ git clone https://github.com/angular/angular.git</code></pre>
+<p>A list of files can be obtained by</p>
+<pre><code>git ls-tree --full-tree -r HEAD</code></pre>
+<p>The first 10 entries look like</p>
+<pre><code>100644 blob 9b2abeb660ab6c38a2378afd3a2f31bbca10cac3    .bowerrc
+100644 blob 8d1c3c310286f5569e9ae2d99a5b50320a177e36    .clang-format
+100644 blob f1cc3ad329c5d5be1f19d75f27352ea695de0afc    .editorconfig
+100644 blob b7ca95b5b77a91a2e1b6eaf80c2a4a52a99ec378    .gitattributes
+100644 blob 5f639fc3384e36b91c6efd28cf60e168680ce9f7    .github/ISSUE_TEMPLATE.md
+100644 blob 8d93de2e45f1e6bf146cefd8b18526b2d99aaa82    .github/PULL_REQUEST_TEMPLATE.md
+100644 blob 8060eef4d4c04f1f7f1aa6a48e9aaf7dc5e12584    .gitignore
+100644 blob ade65226e0aa7e8abed00fc326362982f792b262    .nvmrc
+100644 blob f31ef0d7d6996c8e202380b7a6bdfcb3ed757267    .travis.yml
+100644 blob 0eefaa57ce1dfc216428f5664b632ec324cf918e    CHANGELOG.md</code></pre>
+<p>This command will give you all the files in the repository. (sub repositories are not considered at this point).</p>
+<p>If you want to see, what is happening in a specific file the <code>git log</code> command is your friend. Let’s look at an example.</p>
+<pre><code>$ git log --since=&quot;4 weeks ago&quot; CHANGELOG.md</code></pre>
+<p>will give you an overview over the last four weeks for a specific file.</p>
+<pre><code>commit c194f6695d3a00330ddfbefdc3ba393b0dce0dab
+Author: Jeremy Elbourn &lt;jelbourn@google.com&gt;
+Date:   Fri Mar 18 14:35:40 2016 -0700
+
+chore: bump version to beta.11 w/ changelog
+
+commit ea11b3f1f87afbf27d7cd9de87384d4963cd1965
+Author: Evan Martin &lt;martine@danga.com&gt;
+Date:   Thu Mar 17 15:01:44 2016 -0700
+
+docs(changelog): update change log to beta.10
+                         
+commit aa43d2f87b9411eee9801d5d45f789f8c4161aa2
+Author: Vikram Subramanian &lt;viks@google.com&gt;
+Date:   Wed Mar 9 14:56:08 2016 -0800
+
+docs(changelog): update change log to beta 9
+
+commit 2830df4190e98d05bad396993776d31ba6efa6e2
+Author: vsavkin &lt;avix1000@gmail.com&gt;
+Date:   Wed Mar 2 11:32:38 2016 -0800</code></pre>
+<p>we will only need the committer names.</p>
+<pre><code>$ git log --format=&quot;%an&quot;  --since=&quot;4 weeks ago&quot; CHANGELOG.md
+Jeremy Elbourn
+Evan Martin
+Vikram Subramanian
+vsavkin</code></pre>
+<p>Now we take all committers, count their names and take the first in list.</p>
+<pre><code>$ git log --format=&quot;%an&quot; CHANGELOG.md | sort | uniq -c | sort -rn | head -n 1
+     10 Igor Minar</code></pre>
+<p>This statement is very simple. “Igor Minar made the most commits on the file CHANGELOG.md”. There are several ways to get the name after the count. Here is one.</p>
+<pre><code>$ echo &quot;     10 Igor Minar&quot; | xargs -e | cut -d &quot; &quot; -f2-
+Igor Minar</code></pre>
+<p>The <code>xargs -e</code> command eliminates the leading white spaces. Splitting after the first whitespace gets the name.</p>
+<p>Now we are almost ready. Putting all the peaces together will lead us to.</p>
+<pre><code>#!/bin/bash
+for file in ` git ls-tree --full-tree -r HEAD | awk '{ print $4}'`;
+do
+    git log --format=&quot;%an&quot; $file | sort | uniq -c | sort -rn | head -n 1 | xargs -e | cut -d &quot; &quot; -f2-
+done</code></pre>
+<p>This script prints for each file the name of the committer with the most commits. When you pipe the output of this script into <code>committers.log</code> you can get the “main committers” for the whole repository.</p>
+<pre><code>$ cat committers.log | sort | uniq -c | sort -rn | awk '$1 &gt; 10 { print }'
+    381 vsavkin
+    194 Tim Blasi
+    147 Tobias Bosch
+    128 Jeff Cross
+    93 kutyel
+    82 Brian Ford
+    59 Jason Teplitz
+    49 Yegor Jbanov
+    45 Misko Hevery
+    42 Julie Ralph
+    40 Igor Minar
+    32 Victor Berchet
+    29 Matias Niemelä
+    24 Alex Eagle
+    16 Pawel Kozlowski
+    16 Alex Rickabaugh
+    15 Peter Bacon Darwin
+    15 Ian Riley
+    11 yjbanov
+    11 Marc Laval</code></pre>
+<p>The output gives you a hint, what is currently happening in the repository. It says nothing about the quality of the work of the committer. <a href="https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History">Rewriting commits</a> is often use to have a slim commit history. Others leave the commits as they are. For older repository it may be more interesting, what has happened e.g. in the last two years. With a few adjustments this can be achieved. See <a href="https://git-scm.com/docs/git-log">git log –since</a> for more information.</p>
+
+        </div>
+        <div id="footer">
+            Copyright &copy; 2016 by Jan Frederik Hake | 
+            <a href="https://enter-haken.github.io/atom.xml">atom feed</a> | 
+            generated by <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </div>
+    </body>
+</html>

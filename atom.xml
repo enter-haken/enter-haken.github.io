@@ -106,7 +106,7 @@ done</code></pre>
     15 Ian Riley
     11 yjbanov
     11 Marc Laval</code></pre>
-<p>The output gives you a hint, what is currently happening in the repository. It says nothing about the quality of the work of the committer. <a href="https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History">Rewriting commits</a> is often use to have a slim commit history. Others leave the commits as they are. For an older repository it may be more interesting, what has happened e.g. in the last two years. With a few adjustments this can be achieved. See <a href="https://git-scm.com/docs/git-log">git log –since</a> for more information.</p>
+<p>The output gives you a hint, what is currently happening in the repository. It says nothing about the quality of the work of the committer. <a href="https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History">Rewriting commits</a> is often use to have a slim commit history. Others leave the commits as they are. For older repository it may be more interesting, what has happened e.g. in the last two years. With a few adjustments this can be achieved. See <a href="https://git-scm.com/docs/git-log">git log –since</a> for more information.</p>
 ]]></summary>
 </entry>
 <entry>

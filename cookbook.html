@@ -17,20 +17,29 @@
 
         <div id="content">
             <p>This is my loose collection of snippets, I use from day to day.</p>
-<h3 id="git">git</h3>
+<h1 id="dot">dot</h1>
+<p><a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot</a> is a graph description language. Assuming a image viewer like <a href="https://feh.finalrewind.org">feh</a> is installed</p>
+<pre><code>echo 'digraph test { a -&gt; b; b -&gt; c; a -&gt; c; }' | dot -Tpng | feh -
+</code></pre>
+<p>will show</p>
+<div class="figure">
+<img src="./images/dot_test.png" alt />
+
+</div>
+<h1 id="git">git</h1>
 <p>pull all repositories located in sub directories, assuming there are only subdirectories in the current directory</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#!/bin/bash</span>
 <span class="kw">ls</span> <span class="kw">|</span> <span class="kw">xargs</span> -I<span class="dt">{}</span> git -C <span class="dt">{}</span> pull</code></pre></div>
-<h3 id="vim">vim</h3>
+<h1 id="vim">vim</h1>
 <p>some vim stuff</p>
-<h4 id="movement">movement</h4>
+<h2 id="movement">movement</h2>
 <ul>
 <li><code>k</code> - up</li>
 <li><code>j</code> - down</li>
 <li><code>h</code> - left</li>
 <li><code>l</code> - right</li>
 </ul>
-<h4 id="visual">visual</h4>
+<h2 id="visual">visual</h2>
 <ul>
 <li><code>iv'</code> - select inner text bettween two <code>'</code></li>
 <li><code>&lt;C-V&gt;</code> - select column

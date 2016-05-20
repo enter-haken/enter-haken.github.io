@@ -57,12 +57,12 @@ ${exec daysLeft -d 2016-06-17 -w -e 2016-05-18 2016-05-27 2016-05-16 2016-05-26 
 <p>Henrik Kniberg revisit this topic in a resent <a href="http://blog.crisp.se/2016/01/25/henrikkniberg/making-sense-of-mvp">blog post</a> in a more detailed way.</p>
 <p>When you are developing a new product, what is your skateboard? If you develop a todo application for example, maybe a simple textbox with a resulting textfield may be your skateboard.</p>
 <div class="figure">
-<img src="/images/skateboard.png" />
+<img src="/images/skateboard.png" alt="" />
 
 </div>
 <p>You are able to insert todo items and revisit them later. On the next iteration you may delete items.</p>
 <div class="figure">
-<img src="/images/mvp.png" />
+<img src="/images/mvp.png" alt="" />
 
 </div>
 <p>This could be your mvp. You have a product, some early adopters can work with.</p>

@@ -8,8 +8,197 @@
         <name>Jan Frederik Hake</name>
         <email>jan_hake@gmx.de</email>
     </author>
-    <updated>2016-12-27T00:00:00Z</updated>
+    <updated>2017-01-02T00:00:00Z</updated>
     <entry>
+    <title>get in touch with react</title>
+    <link href="https://enter-haken.github.io/posts/2017-01-02-fist-steps-with-react.html" />
+    <id>https://enter-haken.github.io/posts/2017-01-02-fist-steps-with-react.html</id>
+    <published>2017-01-02T00:00:00Z</published>
+    <updated>2017-01-02T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<h1>get in touch with react</h1>
+
+<div class="info">
+    
+    Posted on January  2, 2017
+    
+        
+</div>
+
+<p>Last year I started a little web project for work. After probing some frameworks, I started with <a href="https://facebook.github.io/react/">react</a>. I must say, the tooling around the framework is quite sophisticated.</p>
+<p>First of all, <a href="https://www.npmjs.com/">npm</a> is needed for the build tool chain. Via <code>npm install create-react-app -g</code> you’ve got a good point to start. It installs the <a href="https://github.com/facebookincubator/create-react-app">tool chain</a>, needed for creating a development environment.</p>
+<p>Let us take a simple Blog engine as an example. You can setup a new react project with <code>create-react-app Blog</code>. This command creates a new folder named <code>Blog</code> and installs a bunch of tools in the project directory.</p>
+<p>With <code>npm start</code> you can take a first look of the generated result. It should look like</p>
+<div class="figure">
+<img src="/images/react-scaffolded-app.png" />
+
+</div>
+<pre><code>Compiled successfully!
+
+The app is running at:
+
+  http://localhost:3000/
+
+Note that the development build is not optimized.
+To create a production build, use npm run build.</code></pre>
+<p>The development server is up and running. At every time you can make a production build with <code>npm run build</code>. The first build size is with 152kb rather small.</p>
+<p>After deleting some unused files you have left an <code>index.html</code> as a starting point for our application.</p>
+<pre><code>&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+    &lt;link rel=&quot;shortcut icon&quot; href=&quot;%PUBLIC_URL%/favicon.ico&quot;&gt;
+    &lt;title&gt;React App&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+ &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>The corresponding <code>index.js</code> looks like</p>
+<pre><code>import React from &#39;react&#39;;
+import ReactDOM from &#39;react-dom&#39;;
+import App from &#39;./App&#39;;
+
+ReactDOM.render(
+  &lt;App /&gt;,
+  document.getElementById(&#39;root&#39;)
+);</code></pre>
+<p>and the <code>App.js</code> like</p>
+<pre><code>import React, { Component } from &#39;react&#39;;
+
+class App extends Component {
+  render() {
+    return (
+      &lt;div className=&quot;App&quot;&gt;
+        Test
+      &lt;/div&gt;
+    );
+  }
+}
+
+export default App;</code></pre>
+<p>The existence of <code>index.html</code> and <code>index.js</code> is mandatory for the build process. Everything else can be changed.</p>
+<p>If you are wondering about the weird syntax in the render methods, let me assure you, everything is all right. This is called <a href="https://facebook.github.io/react/docs/introducing-jsx.html">JSX</a> and it is a JavaScript syntax extension. If you like to see, what is JSX in depth, there are some good <a href="https://facebook.github.io/react/docs/jsx-in-depth.html">examples</a> as part of the documentation.</p>
+<p>If you are new to ECMAScript &gt;6, look at the <a href="http://es6-features.org/">new features</a>. React uses a lot of them, especially classes, expression bodies and block scoped variables.</p>
+<p>We don’t want to code our own CSS framework for our blog engine. There are several possibilities available on the market. Google’s <a href="https://material.io/guidelines/">material design</a> is available for a while. It exists a project, which combines react components with the material design. It is called <a href="http://www.material-ui.com/">material ui</a>.</p>
+<p>We are going to use a few components for our blog application. For a working app, material ui requires a theme. Therefore the <code>index.js</code> must be <a href="http://www.material-ui.com/#/get-started/usage">adjusted</a>.</p>
+<pre><code>import React from &#39;react&#39;;
+import ReactDOM from &#39;react-dom&#39;;
+import MuiThemeProvider from &#39;material-ui/styles/MuiThemeProvider&#39;;
+
+import App from &#39;./App&#39;;
+
+ReactDOM.render(
+  &lt;MuiThemeProvider&gt;
+    &lt;App /&gt;
+  &lt;/MuiThemeProvider&gt;,
+  document.getElementById(&#39;root&#39;)
+);</code></pre>
+<p>Now we can use the material ui components.</p>
+<p>But first, we need some data. For scaffolding, we can use simple json files. Later on, they can be replaced by an api.</p>
+<pre><code>{
+    &quot;data&quot;: [{
+        &quot;Id&quot;: 1,
+        &quot;Title&quot;: &quot;Test 1 MainTitle&quot;,
+        &quot;SubTitle&quot;: &quot;Test 1 Subtitle&quot;,
+        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
+    },{
+        &quot;Id&quot;: 2,
+        &quot;Title&quot;: &quot;Test 2 MainTitle&quot;,
+        &quot;SubTitle&quot;: &quot;Test 2 Subtitle&quot;,
+        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
+    },{
+        &quot;Id&quot;: 3,
+        &quot;Title&quot;: &quot;Test 3 MainTitle&quot;,
+        &quot;SubTitle&quot;: &quot;Test 3 Subtitle&quot;,
+        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
+    },{
+        &quot;Id&quot;: 4,
+        &quot;Title&quot;: &quot;Test 4 MainTitle&quot;,
+        &quot;SubTitle&quot;: &quot;Test 4 Subtitle&quot;,
+        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
+    }]
+}</code></pre>
+<p>A blog entry can be viewed with a <a href="http://www.material-ui.com/#/components/card">card</a>.</p>
+<p>Every component is either statefull or pure. A statefull component can change after render. A pure component depends only on it’s properties. These properties are filled on creation, so pure components are kind of immutable.</p>
+<p>As you design your application you must decide which component should hold the state. For this example I made a pure component <code>BlogPost</code></p>
+<pre><code>import React, {
+    Component
+} from &#39;react&#39;;
+
+import {
+    Card,
+    CardHeader,
+    CardText
+} from &#39;material-ui/Card&#39;;
+
+class BlogPost extends Component {
+
+    render() {
+      return &lt;Card expanded={true} style={{ marginBottom : &#39;10px&#39; }}&gt;
+                &lt;CardHeader
+                    title={this.props.title}
+                    subtitle={this.props.subTitle}
+                /&gt;
+                &lt;CardText&gt;
+                    {this.props.text} 
+                &lt;/CardText&gt;
+              &lt;/Card&gt;
+    }
+}
+
+export default BlogPost;</code></pre>
+<p>This component will only render property data.</p>
+<pre><code>&lt;BlogPost title=&quot;test&quot; subTitle=&quot;test sub&quot; text=&quot;lorem ipsum&quot; /&gt;</code></pre>
+<p>will be rendered to</p>
+<div class="figure">
+<img src="/images/card-blog-test.png" />
+
+</div>
+<p>How do we get our json blog data into our application. For our small example, we extend our <code>App.js</code> to a statefull component. The data will be loaded after application start.</p>
+<p>A good place for this is the <a href="https://facebook.github.io/react/docs/react-component.html#componentdidmount">componentDidMount</a> function. Changes on state will cause a re render of the affected dom elements. We will override this method with.</p>
+<pre><code>componentDidMount(){
+  fetch(&#39;./blogPosts.json&#39;)
+    .then((response) =&gt; {
+      return response.json();
+    })
+    .then((response) =&gt; {
+      this.setState({ blogPosts : response.data});
+    })
+}</code></pre>
+<p>After the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch">fetch</a> the state will have an array <code>state.blogPosts</code>, which contains all the blog data. For the first posts, this solution will be good enough, but this part is a good candidate for later refactor.</p>
+<p>To ensure the <code>state.blogPosts</code> Array exists, it should be initialized in the constructor.</p>
+<pre><code>constructor(props){
+  super(props);
+  this.state = {
+      blogPosts : []
+  };
+}</code></pre>
+<p>To render the json data, we must rewrite the <code>render</code> method of our <code>App.js</code> to use the state data.</p>
+<pre><code>render() {
+  const posts = this.state.blogPosts.map((post) =&gt; {
+      return &lt;BlogPost 
+          key={post.Id} 
+          title={post.Title} 
+          subTitle={post.SubTitle} 
+          text={post.Text} /&gt;
+  });
+
+  return &lt;div className=&quot;App&quot;&gt;
+            { posts }
+         &lt;/div&gt;
+  
+}</code></pre>
+<p>The <code>state.blogPosts</code> must be mapped to react components. Due to the JSX extensions, the <code>BlogPost</code> Component can be returned by a simple function. The key property is necessary for react, to identify the dom element, to be rendered on change.</p>
+<p>After fetching the data the <code>App.js</code> will look like</p>
+<div class="figure">
+<img src="/images/card-blog-example.png" />
+
+</div>
+<p>Our <a href="/example/react/blog/v1/index.html">v1</a> can display blog data coming from a server (json file). For a <a href="/posts/2016-03-25-mvp.html">skateboard</a> this is ok for now. You can review the source on <a href="https://github.com/enter-haken/reactBlogExample">Github</a></p>
+]]></summary>
+</entry>
+<entry>
     <title>six months in new job</title>
     <link href="https://enter-haken.github.io/posts/2016-12-27-new-job.html" />
     <id>https://enter-haken.github.io/posts/2016-12-27-new-job.html</id>

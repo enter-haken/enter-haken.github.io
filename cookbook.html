@@ -60,6 +60,21 @@
 <li><code>I</code> - insert text -&gt; <code>&lt;ESC&gt;</code> -&gt; insert text in front of the selection</li>
 </ul></li>
 </ul>
+<h2 id="repeats">repeats</h2>
+<ul>
+<li><code>g</code> - global</li>
+<li><code>:g/Test/d</code> - delete all lines containing <code>Test</code></li>
+<li><code>:g!/Test/d</code> - delete all lines not containing <code>Test</code></li>
+</ul>
+<h2 id="substitute">substitute</h2>
+<ul>
+<li><code>:%s/foo/bar/g</code> - replace all <code>foo</code> with <code>bar</code></li>
+</ul>
+<h2 id="settings">settings</h2>
+<ul>
+<li><code>:set ignorecase</code> - case insensitive search</li>
+<li><code>:set wrap</code> / <code>:set nowrap</code> - enables / disables automatic line breaks</li>
+</ul>
         </div>
         <div id="footer">
             Copyright &copy; 2016 - 2017 by Jan Frederik Hake | 

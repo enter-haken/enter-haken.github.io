@@ -34,6 +34,10 @@
 <p>pull all repositories located in sub directories, assuming there are only subdirectories in the current directory</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#!/bin/bash</span>
 <span class="fu">ls</span> <span class="kw">|</span> <span class="fu">xargs</span> -I<span class="dt">{}</span> git -C <span class="dt">{}</span> pull</code></pre></div>
+<h2 id="reset-a-single-file">reset a single file</h2>
+<pre><code>git checkout HEAD -- fileName.xxx</code></pre>
+<h2 id="show-graph">show graph</h2>
+<pre><code>git log --graph --oneline --all</code></pre>
 <h1 id="vim">vim</h1>
 <p>some vim stuff</p>
 <h2 id="movement">movement</h2>

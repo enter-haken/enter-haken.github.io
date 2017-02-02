@@ -17,7 +17,7 @@
         </div>
 
         <div id="content">
-            <p>This is my loose collection of snippets, I use from day to day.</p>
+            <p>This is my loose collection of snippets, applications and commands, I use from day to day.</p>
 <h1 id="dot">dot</h1>
 <p><a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">dot</a> is a graph description language. Assuming a image viewer like <a href="https://feh.finalrewind.org">feh</a> is installed</p>
 <pre><code>echo 'digraph { a -&gt; b; b -&gt; c; a -&gt; c; }' | dot -Tpng | feh -
@@ -62,6 +62,10 @@
 <li><code>&lt;ctrl&gt; b x</code> - kill pane</li>
 <li><code>&lt;ctrl&gt; b &quot;</code> - create horizontal pane</li>
 <li><code>&lt;ctrl&gt; b %</code> - create vertical pane</li>
+</ul>
+<h1 id="batch">batch</h1>
+<ul>
+<li><code>for /F %L in (commandParameters.txt) do echo %L</code> - Execute command for every line in given textfile (in this case the <code>echo</code> command) / <a href="https://technet.microsoft.com/en-us/library/bb490909.aspx">for command</a></li>
 </ul>
 <h1 id="vim">vim</h1>
 <p>some vim stuff</p>

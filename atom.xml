@@ -133,7 +133,6 @@ import {
 } from &#39;material-ui/Card&#39;;
 
 class BlogPost extends Component {
-
     render() {
       return &lt;Card expanded={true} style={{ marginBottom : &#39;10px&#39; }}&gt;
                 &lt;CardHeader
@@ -187,7 +186,6 @@ export default BlogPost;</code></pre>
   return &lt;div className=&quot;App&quot;&gt;
             { posts }
          &lt;/div&gt;
-  
 }</code></pre>
 <p>The <code>state.blogPosts</code> must be mapped to react components. Due to the JSX extensions, the <code>BlogPost</code> Component can be returned by a simple function. The key property is necessary for react, to identify the dom element, to be rendered on change.</p>
 <p>After fetching the data the <code>App.js</code> will look like</p>

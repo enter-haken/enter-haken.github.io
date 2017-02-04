@@ -15,17 +15,9 @@
     <id>https://enter-haken.github.io/posts/2017-01-02-fist-steps-with-react.html</id>
     <published>2017-01-02T00:00:00Z</published>
     <updated>2017-01-02T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<h1>get in touch with react</h1>
-
-<div class="info">
-    
-    Posted on January  2, 2017
-    
-        
-</div>
-
-<p>Last year I started a little web project for work. After probing some frameworks, I started with <a href="https://facebook.github.io/react/">react</a>. I must say, the tooling around the framework is quite sophisticated.</p>
+    <summary type="html"><![CDATA[<p>Last year I started a little web project for work. After probing some frameworks, I started with <a href="https://facebook.github.io/react/">react</a>. I must say, the tooling around the framework is quite sophisticated.</p>
 <p>First of all, <a href="https://www.npmjs.com/">npm</a> is needed for the build tool chain. Via <code>npm install create-react-app -g</code> you’ve got a good point to start. It installs the <a href="https://github.com/facebookincubator/create-react-app">tool chain</a>, needed for creating a development environment.</p>
+<!--more-->
 <p>Let us take a simple Blog engine as an example. You can setup a new react project with <code>create-react-app Blog</code>. This command creates a new folder named <code>Blog</code> and installs a bunch of tools in the project directory.</p>
 <p>With <code>npm start</code> you can take a first look of the generated result. It should look like</p>
 <div class="figure">
@@ -193,8 +185,7 @@ export default BlogPost;</code></pre>
 <img src="/images/card-blog-example.png" />
 
 </div>
-<p>Our <a href="/example/react/blog/v1/index.html">v1</a> can display blog data coming from a server (json file). For a <a href="/posts/2016-03-25-mvp.html">skateboard</a> this is ok for now. You can review the source on <a href="https://github.com/enter-haken/reactBlogExample">Github</a></p>
-]]></summary>
+<p>Our <a href="/example/react/blog/v1/index.html">v1</a> can display blog data coming from a server (json file). For a <a href="/posts/2016-03-25-mvp.html">skateboard</a> this is ok for now. You can review the source on <a href="https://github.com/enter-haken/reactBlogExample">Github</a></p>]]></summary>
 </entry>
 <entry>
     <title>six months in new job</title>
@@ -202,16 +193,8 @@ export default BlogPost;</code></pre>
     <id>https://enter-haken.github.io/posts/2016-12-27-new-job.html</id>
     <published>2016-12-27T00:00:00Z</published>
     <updated>2016-12-27T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<h1>six months in new job</h1>
-
-<div class="info">
-    
-    Posted on December 27, 2016
-    
-        
-</div>
-
-<p>This year is almost done. I got a new place for work and found a new old friend the <a href="https://www.bahn.de">Deutsche Bahn</a>. My way to work consist now of cycling and going by train.</p>
+    <summary type="html"><![CDATA[<p>This year is almost done. I got a new place for work and found a new old friend the <a href="https://www.bahn.de">Deutsche Bahn</a>. My way to work consist now of cycling and going by train.</p>
+<!--more-->
 <blockquote class="twitter-tweet" data-lang="de">
 <p lang="en" dir="ltr">
 <a href="https://twitter.com/hashtag/Autumn?src=hash">#Autumn</a> arrived <a href="https://twitter.com/hashtag/canyonbikes?src=hash">#canyonbikes</a> <a href="https://t.co/AJqizUfHgj">pic.twitter.com/AJqizUfHgj</a>
@@ -230,8 +213,7 @@ export default BlogPost;</code></pre>
 <p>It is ok for now. If you remove the December (German Christmas market time), I have approximately one our for one direction.</p>
 <p>From a professional point of view it has become more quiet. I am currently working on a mature dot net stack. My work is planed and reviewed by several instances. I am in a controlled environment and there are less surprises.</p>
 <p>At this time, this is exactly what I need, but how looks the next step like?</p>
-<p>My batteries are full again, and I’ve got more effective time for my own. My work life has become more predictable and stable. Time to build something cool ;)</p>
-]]></summary>
+<p>My batteries are full again, and I’ve got more effective time for my own. My work life has become more predictable and stable. Time to build something cool ;)</p>]]></summary>
 </entry>
 <entry>
     <title>days left</title>
@@ -239,17 +221,9 @@ export default BlogPost;</code></pre>
     <id>https://enter-haken.github.io/posts/2016-05-11-daysLeft.html</id>
     <published>2016-05-11T00:00:00Z</published>
     <updated>2016-05-11T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<h1>days left</h1>
-
-<div class="info">
-    
-    Posted on May 11, 2016
-    
-        
-</div>
-
-<p>After almost four years, I am moving on towards a new job. Removing the german holydays, weekends and vacations, there are only 23 working days left.</p>
+    <summary type="html"><![CDATA[<p>After almost four years, I am moving on towards a new job. Removing the german holydays, weekends and vacations, there are only 23 working days left.</p>
 <p>This is not very much time, considering the work, which have to be completed before I leave. So I decided to build something simple to direct my attention to the last days.</p>
+<!--more-->
 <p>I currently running a <a href="https://gentoo.org">Gentoo</a> system with <a href="http://dwm.suckless.org">dwm</a> as a window manager. My <em>.xinitrc</em> looks like this:</p>
 <pre><code>xscreensaver &amp;
 (conky | while read LINE; do xsetroot -name &quot;$LINE&quot;; done) &amp;
@@ -260,7 +234,13 @@ exec dwm</code></pre>
 TEXT
 ${exec daysLeft -d 2016-06-17 -w -e 2016-05-18 2016-05-27 2016-05-16 2016-05-26 } working days left | ${exec oneLineStatus} | ${exec date &quot;+%d.%m.%Y %R&quot;}</code></pre>
 <p>I think, the <a href="https://twitter.com/enter_haken/status/730390519705128962">first version</a> is all I need, to keep fokus on the last days of my current job.</p>
-]]></summary>
+<blockquote class="twitter-tweet" data-lang="de">
+<p lang="en" dir="ltr">
+the days are counted… <a href="https://t.co/QYpCi9HG7B">pic.twitter.com/QYpCi9HG7B</a>
+</p>
+— Jan Frederik Hake (<span class="citation">@enter_haken</span>) <a href="https://twitter.com/enter_haken/status/730390519705128962">11. Mai 2016</a>
+</blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>]]></summary>
 </entry>
 <entry>
     <title>minimum viable product</title>
@@ -268,16 +248,8 @@ ${exec daysLeft -d 2016-06-17 -w -e 2016-05-18 2016-05-27 2016-05-16 2016-05-26 
     <id>https://enter-haken.github.io/posts/2016-03-25-mvp.html</id>
     <published>2016-03-25T00:00:00Z</published>
     <updated>2016-03-25T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<h1>minimum viable product</h1>
-
-<div class="info">
-    
-    Posted on March 25, 2016
-    
-        
-</div>
-
-<p>According to <a href="http://www.amazon.com/User-Story-Mapping-Discover-Product/dp/1491904909">User Story Mapping, 44ff</a> there are several ways to grow a product. You can take the requirements as given and build, product peace by peace and finally deliver it all, or try to build working products with each iteration.</p>
+    <summary type="html"><![CDATA[<p>According to <a href="http://www.amazon.com/User-Story-Mapping-Discover-Product/dp/1491904909">User Story Mapping, 44ff</a> there are several ways to grow a product. You can take the requirements as given and build a product peace by peace. Finally you deliver it all, or try to build working products with each iteration.</p>
+<!--more-->
 <p>Henrik Kniberg revisit this topic in a resent <a href="http://blog.crisp.se/2016/01/25/henrikkniberg/making-sense-of-mvp">blog post</a> in a more detailed way.</p>
 <p>When you are developing a new product, what is your skateboard? If you develop a todo application for example, maybe a simple textbox with a resulting textfield may be your skateboard.</p>
 <div class="figure">
@@ -299,8 +271,7 @@ ${exec daysLeft -d 2016-06-17 -w -e 2016-05-18 2016-05-27 2016-05-16 2016-05-26 
 <p>When you try to keep these iterations as small as possible, with every iteration a user can help workout a better solution. The possibility to work against the customer is minimized dramatically.</p>
 <p>If you create a product by your own, you can either choose to build a product until you have your 100%, or grow your application step by step, and integrate others into your ideas.</p>
 <p>If you are working on a project, the customer must play along. There are contracts to fulfill and often there are several parties in the game.</p>
-<p>When you decide for a mvp approach for a non trivial application, you have to decide how to iterate throw the production cycle. Among other things <a href="/posts/2016-02-27-getting-better.html#take-care-of-your-data">you have to care for your data</a> over all iterations, what becomes more complicated on a multilayered application.</p>
-]]></summary>
+<p>When you decide for a mvp approach for a non trivial application, you have to decide how to iterate throw the production cycle. Among other things <a href="/posts/2016-02-27-getting-better.html#take-care-of-your-data">you have to care for your data</a> over all iterations, what becomes more complicated on a multilayered application.</p>]]></summary>
 </entry>
 <entry>
     <title>Repository ownership</title>
@@ -308,16 +279,8 @@ ${exec daysLeft -d 2016-06-17 -w -e 2016-05-18 2016-05-27 2016-05-16 2016-05-26 
     <id>https://enter-haken.github.io/posts/2016-03-20-repository-distribution.html</id>
     <published>2016-03-20T00:00:00Z</published>
     <updated>2016-03-20T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<h1>Repository ownership</h1>
-
-<div class="info">
-    
-    Posted on March 20, 2016
-    
-        
-</div>
-
-<p>Weeks ago we had a discussion about code ownership. Over years ownership may skip over to other developers e.g. due to job change. For a approximation you can start with the files, checked in to repository. I will use the <a href="https://github.com/angular/angular.git">Angular.js</a> repository for demonstrations.</p>
+    <summary type="html"><![CDATA[<p>Weeks ago my colleagues and I had a discussion about code ownership. Over years ownership may skip over to other developers e.g. due to job change. For a approximation you can start with the files, checked in to repository. I will use the <a href="https://github.com/angular/angular.git">Angular.js</a> repository for demonstrations.</p>
+<!--more-->
 <p>First make a local clone.</p>
 <pre><code>$ git clone https://github.com/angular/angular.git</code></pre>
 <p>A list of files can be obtained by</p>
@@ -399,8 +362,7 @@ done</code></pre>
     15 Ian Riley
     11 yjbanov
     11 Marc Laval</code></pre>
-<p>The output gives you a hint, what is currently happening in the repository. It says nothing about the quality of the work of the committer. <a href="https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History">Rewriting commits</a> is often use to have a slim commit history. Others leave the commits as they are. For an older repository it may be more interesting, what has happened e.g. in the last two years. With a few adjustments this can be achieved. See <a href="https://git-scm.com/docs/git-log">git log –since</a> for more information.</p>
-]]></summary>
+<p>The output gives you a hint, what is currently happening in the repository. It says nothing about the quality of the work of the committer. <a href="https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History">Rewriting commits</a> is often use to have a slim commit history. Others leave the commits as they are. For an older repository it may be more interesting, what has happened e.g. in the last two years. With a few adjustments this can be achieved. See <a href="https://git-scm.com/docs/git-log">git log –since</a> for more information.</p>]]></summary>
 </entry>
 <entry>
     <title>getting better</title>
@@ -408,17 +370,9 @@ done</code></pre>
     <id>https://enter-haken.github.io/posts/2016-02-27-getting-better.html</id>
     <published>2016-02-27T00:00:00Z</published>
     <updated>2016-02-27T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<h1>getting better</h1>
-
-<div class="info">
-    
-    Posted on February 27, 2016
-    
-        
-</div>
-
-<p>When you think about programming, you will have writing code in mind. Although pressing you ideas into executable code is one of the finest discipline for a software engineer, but it doesn’t tell the whole story.</p>
+    <summary type="html"><![CDATA[<p>When you think about programming, you will have writing code in mind. Although pressing you ideas into executable code is one of the finest discipline for a software engineer, but it doesn’t tell the whole story.</p>
 <p>There are some techniques and abilities, a good software developer should have from my point of view.</p>
+<!--more-->
 <h1 id="brain-debug">brain debug</h1>
 <p>A college of mine called it “brain debug”. An ability to debug code without running it. From my perspective a good thing. This shows, that you know what you are doing. You have an idea, how your code behaves, before you execute it for the first time. Often good programmers write a brunch of code, before they compile it.</p>
 <h1 id="write-code-for-humans">write code for humans</h1>
@@ -439,8 +393,7 @@ done</code></pre>
 <li><a href="http://henrikwarne.com/2015/04/16/lessons-learned-in-software-development/">lessons learned in sofware development</a></li>
 <li><a href="http://henrikwarne.com/2014/06/30/what-makes-a-good-programmer/">what makes a good programmer</a></li>
 <li><a href="https://en.wikipedia.org/wiki/No_Silver_Bullet">there is no silver bullet</a></li>
-</ul>
-]]></summary>
+</ul>]]></summary>
 </entry>
 <entry>
     <title>Git Cleanup</title>
@@ -448,16 +401,8 @@ done</code></pre>
     <id>https://enter-haken.github.io/posts/2016-02-27-cleanup-git.html</id>
     <published>2016-02-27T00:00:00Z</published>
     <updated>2016-02-27T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<h1>Git Cleanup</h1>
-
-<div class="info">
-    
-    Posted on February 27, 2016
-    
-        
-</div>
-
-<p>After working over months with several developers on one repository, a little bit “tree care” is necessary. Usually old merged branches are deleted on server, when they are not needed any more.</p>
+    <summary type="html"><![CDATA[<p>After working over months with several developers on one repository, a little bit “tree care” is necessary. Usually old merged branches are deleted on server, when they are not needed any more.</p>
+<!--more-->
 <pre><code>for branch in `git branch -r --merged master`;
 do
     comitter=`git show --format=&quot;%an&quot; $branch | head -n 1;`
@@ -469,8 +414,7 @@ done</code></pre>
 <pre><code>./myBranches.sh &quot;Jan Frederik Hake&quot; | grep feature</code></pre>
 <p>If you cut of the remote prefix a call to</p>
 <pre><code>./myBranches.sh &quot;Jan Frederik Hake&quot; | grep feature | cut -d &#39;/&#39; -f 2,3 | xargs git push origin --delete</code></pre>
-<p>deletes the merged branches from a remote repository.</p>
-]]></summary>
+<p>deletes the merged branches from a remote repository.</p>]]></summary>
 </entry>
 
 </feed>

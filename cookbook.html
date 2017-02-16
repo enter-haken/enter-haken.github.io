@@ -36,8 +36,17 @@
 <span class="fu">ls</span> <span class="kw">|</span> <span class="fu">xargs</span> -I<span class="dt">{}</span> git -C <span class="dt">{}</span> pull</code></pre></div>
 <h2 id="reset-a-single-file">reset a single file</h2>
 <pre><code>git checkout HEAD -- fileName.xxx</code></pre>
-<h2 id="show-graph">show graph</h2>
-<pre><code>git log --graph --oneline --all</code></pre>
+<h2 id="aliases">aliases</h2>
+<p>common aliases</p>
+<pre><code>git config --global alias.co checkout
+git config --global alias.br branch
+git config --global alias.ci commit
+git config --global alias.st status</code></pre>
+<h3 id="reset-a-single-file-to-head">reset a single file to head</h3>
+<pre><code>git config --global alias.unstage &quot;reset HEAD --&quot;
+git unstage file.txt</code></pre>
+<h3 id="show-graph">show graph</h3>
+<pre><code>git config --global alias.l &quot;log --graph --oneline --all&quot;</code></pre>
 <h1 id="firefox-addons">firefox addons</h1>
 <ul>
 <li><a href="https://addons.mozilla.org/de/firefox/addon/vimfx/">VimFx</a> - using vim commands for browsing</li>
@@ -107,6 +116,11 @@
 <ul>
 <li><code>:set ignorecase</code> - case insensitive search</li>
 <li><code>:set wrap</code> / <code>:set nowrap</code> - enables / disables automatic line breaks</li>
+</ul>
+<h2 id="misc">misc</h2>
+<ul>
+<li><code>u</code> - undo</li>
+<li><code>&lt;ctrl&gt; r</code> - redo</li>
 </ul>
 <h1 id="haskell">haskell</h1>
 <p><a href="http://howistart.org/posts/haskell/1">How I start by Chris Allen</a></p>

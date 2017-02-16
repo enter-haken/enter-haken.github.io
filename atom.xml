@@ -147,7 +147,7 @@ export default BlogPost;</code></pre>
 
 </div>
 <p>How do we get our json blog data into our application. For our small example, we extend our <code>App.js</code> to a statefull component. The data will be loaded after application start.</p>
-<p>A good place for this is the <a href="https://facebook.github.io/react/docs/react-component.html#componentdidmount">componentDidMount</a> function. Changes on state will cause a re render of the affected dom elements. We will override this method with.</p>
+<p>A good place for this is the <a href="https://facebook.github.io/react/docs/react-component.html#componentdidmount">componentDidMount</a> function. Changes on state will cause a rerender of the affected dom elements. We will override this method with.</p>
 <pre><code>componentDidMount(){
   fetch(&#39;./blogPosts.json&#39;)
     .then((response) =&gt; {

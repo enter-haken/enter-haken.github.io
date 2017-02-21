@@ -20,6 +20,23 @@
             <ul id="postList">
     
         <li>
+            <a href="./posts/2017-02-20-pandoc-filter.html">using pandoc filters to create graphs with hakyll</a> - February 20, 2017
+            
+            <p>
+                <p>When you want to convert one document format into an other, <a href="https://jaspervdj.be/hakyll/">Pandoc</a> is your friend. <a href="http://pandoc.org/">Hakyll</a> is using it for converting Markdown into HTML. Once installed (eg. via cabal / stack) you can call pandoc from command line.</p>
+<pre><code>$ echo &quot;# test&quot; | pandoc -t native
+[Header 1 (&quot;test&quot;,[],[]) [Str &quot;test&quot;]]</code></pre>
+<p>This simple example shows the native format. A list of definitions can be found at <a href="http://hackage.haskell.org/package/pandoc-types-1.17.0.5/docs/Text-Pandoc-Definition.html">Hackage</a>. Every document format read is converted into this native format. It is the pandoc internal representation of the document.</p>
+<pre><code>$ echo &quot;# test&quot; | pandoc -w html
+&lt;h1 id=&quot;test&quot;&gt;test&lt;/h1&gt;</code></pre>
+<p>You can get a html output as well. A <a href="http://pandoc.org/scripting.html">pandoc filter</a> can be used to inject a custom behavior between reading and writing a document. This feature is needed to write filters to work with Hakyll</p>
+
+            </p>
+            <a href="./posts/2017-02-20-pandoc-filter.html">more</a>
+            
+        </li>
+    
+        <li>
             <a href="./posts/2017-01-02-fist-steps-with-react.html">get in touch with react</a> - January  2, 2017
             
             <p>

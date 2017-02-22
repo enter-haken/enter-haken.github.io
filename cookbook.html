@@ -30,6 +30,8 @@
 <h1 id="snippet">snippet</h1>
 <p>remove empty lines from output</p>
 <pre><code>sed '/^\s*$/d'</code></pre>
+<p>count lines of code (simple)</p>
+<pre><code>find . -name '*.extension' | xargs wc -l</code></pre>
 <h1 id="git">git</h1>
 <p>pull all repositories located in sub directories, assuming there are only subdirectories in the current directory</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#!/bin/bash</span>

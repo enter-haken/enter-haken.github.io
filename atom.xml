@@ -54,7 +54,7 @@ main = do
 &lt;/g&gt;
 &lt;/svg&gt;</code></pre>
 <p>This looks promising. I choose <code>svg</code>, because it can be easily integrated into a html document.</p>
-<p>At first a create a simple environment for testing. I use a <code>index.html</code> as simple template</p>
+<p>At first a create a simple environment for testing. I use a <code>index.html</code> as a simple template,</p>
 <pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
 &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot;
 &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;
@@ -95,7 +95,7 @@ main = hakyll $ do
             &gt;&gt;= loadAndApplyTemplate &quot;template.html&quot; defaultContext
 
     match &quot;template.html&quot; $ compile templateCompiler</code></pre>
-<p>This function will create a single <code>index.html</code> in the output folder. The interesting part here is the <code>pandocCompiler</code>. There is a <a href="https://hackage.haskell.org/package/hakyll-4.9.5.1/docs/Hakyll-Web-Pandoc.html#g:2">derived compiler</a> <code>pandocCompilerWithTransform</code> which allows you to specify a transformation for the given content. Given the type signature <code>pandocCompilerWithTransform :: ReaderOptions -&gt; WriterOptions -&gt; (Pandoc -&gt; Pandoc) -&gt; Compiler (Item String)</code>, I have an entry point for the filter. I need something that takes a <code>Pandoc</code> and gives back a <code>Pandoc</code>.</p>
+<p>This function will create a single <code>index.html</code> in the output folder. The interesting part here is the <code>pandocCompiler</code>. There is a <a href="https://hackage.haskell.org/package/hakyll-4.9.5.1/docs/Hakyll-Web-Pandoc.html#g:2">derived compiler</a> <code>pandocCompilerWithTransform</code> which allows you to specify a transformation for the given content. Given the type signature <code>pandocCompilerWithTransform :: ReaderOptions -&gt; WriterOptions -&gt; (Pandoc -&gt; Pandoc) -&gt; Compiler (Item String)</code>, I have an entry point for the filter. I need something that takes a <code>Pandoc</code> and returns a <code>Pandoc</code>.</p>
 <pre><code>graphViz :: Pandoc -&gt; Pandoc
 graphViz = walk codeBlock
 
@@ -107,7 +107,7 @@ codeBlock x = x</code></pre>
 <pre><code>svg :: String -&gt; String
 svg contents = unsafePerformIO $ readProcess &quot;dot&quot; [&quot;-Tsvg&quot;] contents</code></pre>
 <p><a href="http://hackage.haskell.org/package/base-4.9.1.0/docs/System-IO-Unsafe.html#v:unsafePerformIO">unsafePerformIO</a> is a kind of ‘backdoor’. It should be used only with care.</p>
-<p>With the new walker</p>
+<p>With the new walker,</p>
 <pre><code>codeBlock :: Block -&gt; Block
 codeBlock cb@(CodeBlock (id, classes, namevals) contents) = 
     case lookup &quot;lang&quot; namevals of
@@ -157,8 +157,8 @@ codeBlock x = x
 
 svg :: String -&gt; String
 svg contents = unsafePerformIO $ readProcess &quot;dot&quot; [&quot;-Tsvg&quot;] contents</code></pre>
-<p>This code transforms a markdown document into html and converts all codeblocks with a <code>lang</code> tag into a svg version of the given graph.</p>
-<p><a href="/example/pandoc/dotlang/index.html">result</a></p>]]></summary>
+<p>This code transforms a markdown document into html and converts all codeblocks with a <code>lang</code> tag into a svg version of the given graph. At this point, I don’t use the value of <code>lang</code>. It is possible to implement a different behaviour for other tags or different values.</p>
+<p>See the <a href="/example/pandoc/dotlang/index.html">result</a>.</p>]]></summary>
 </entry>
 <entry>
     <title>get in touch with react</title>

@@ -28,7 +28,7 @@
 <pre><code>main :: IO ()
 main = putStr &quot;Hello World&quot;</code></pre>
 <p>This file compiles with <code>ghc Main.hs</code> and will output <code>Hello World</code>. The <code>Main.hs</code> file contains a definition of a method <code>main</code> which returns an <code>IO ()</code>. The function definition header is not mandatory, if Haskell can infer the signature during compile time. It is best practice to add a function signature, even it is not necessary.</p>
-<pre><code>ghci&gt;:t putStr
+<pre><code>ghci&gt; :t putStr
 putStr :: String -&gt; IO ()</code></pre>
 <p>Looking at the <code>putStr</code> method, you can see, that it takes a <code>String</code> as a first parameter and returns an <code>IO ()</code>.</p>
 <p>When you work with Haskell, your coding workflow will be slightly different. Instead of debugging, you will often use the <a href="https://wiki.haskell.org/GHC/GHCi">ghci</a> to test your functions.</p>
@@ -38,31 +38,44 @@ putStr :: String -&gt; IO ()</code></pre>
 <p><code>True</code> and <code>False</code> are value constructors. They can have zero or more parameters.</p>
 <pre><code>data Person = SimplePerson String String</code></pre>
 <p>In this example a <code>Person</code> can be created using the value constructor <code>SimplePerson</code>. The first parameter will be the first name, the second the last name.</p>
-<pre><code>ghci&gt;:t SimplePerson 
+<pre><code>ghci&gt; :t SimplePerson 
 SimplePerson :: String -&gt; String -&gt; Person</code></pre>
 <p>Creating a new <code>Person</code> in ghci will cause an error, if you don’t bind it to a variable.</p>
-<pre><code>ghci&gt;data Person = SimplePerson String String
-ghci&gt;SimplePerson &quot;Jan&quot; &quot;Hake&quot;
+<pre><code>ghci&gt; data Person = SimplePerson String String
+ghci&gt; SimplePerson &quot;Jan&quot; &quot;Hake&quot;
 
 &lt;interactive&gt;:6:1:
     No instance for (Show Person) arising from a use of ‘print’
     In a stmt of an interactive GHCi command: print it</code></pre>
 <p>If you want to see, how a <code>Person</code> looks like, it must be able to show it self. Therefore a first <a href="http://learnyouahaskell.com/types-and-typeclasses">type class</a> has to be introduced to the new <code>Person</code>.</p>
-<pre><code>ghci&gt;data Person = SimplePerson String String deriving Show
-ghci&gt;SimplePerson &quot;Jan&quot; &quot;Hake&quot;
+<pre><code>ghci&gt; data Person = SimplePerson String String deriving Show
+ghci&gt; SimplePerson &quot;Jan&quot; &quot;Hake&quot;
 SimplePerson &quot;Jan&quot; &quot;Hake&quot;</code></pre>
-<p>In Haskell, every function is a <a href="https://en.wikipedia.org/wiki/Currying">curried</a> function. This means, every function in Haskell has exactly one parameter.</p>
+<p>In Haskell, every function is a <a href="https://en.wikipedia.org/wiki/Currying">curried</a> function. This means, every function in Haskell has exactly one parameter. This is called <a href="https://wiki.haskell.org/Partial_application">partial application</a> and looks like</p>
+<pre><code>ghci&gt; let add a b =  a + b
+ghci&gt; :t add
+add :: Num a =&gt; a -&gt; a -&gt; a
+ghci&gt; let addOne = add 1
+ghci&gt; :t addOne
+addOne :: Num a =&gt; a -&gt; a
+ghci&gt; addOne 10
+11</code></pre>
+<p>Some new stuff here.</p>
+<p>The function signature <code>add :: Num a =&gt; a -&gt; a -&gt; a</code> says, that the <code>add</code> function uses a <em>type variable</em> <code>a</code>, which has to be an instance of the <code>Num</code> <em>type class</em>. The <code>-&gt;</code> operator is right associative, so the signature can be written as <code>add :: Num a =&gt; a -&gt; (a -&gt; a)</code>.</p>
 <p>You can build a list of <code>Person</code>s with the following expression.</p>
-<pre><code>ghci&gt;map ($ &quot;Hake&quot;) [SimplePerson &quot;Jan&quot;, SimplePerson &quot;Brother dear&quot;]
+<pre><code>ghci&gt; map ($ &quot;Hake&quot;) [SimplePerson &quot;Jan&quot;, SimplePerson &quot;Brother dear&quot;]
 [SimplePerson &quot;Jan&quot; &quot;Hake&quot;,SimplePerson &quot;Brother dear&quot; &quot;Hake&quot;]
 </code></pre>
 <p>When you consider the <code>map</code> function</p>
-<pre><code>ghci&gt;:t map
+<pre><code>ghci&gt; :t map
 map :: (a -&gt; b) -&gt; [a] -&gt; [b]</code></pre>
 <p>from the right site, you can see that <code>[b]</code> is the return type of the <code>map</code> function. In this case it is an array of <code>Person</code>, so <code>b</code> is a <code>Person</code>. the <code>[a]</code> is a list of <code>SimplePerson</code>is which takes a last name and returns a Person. The signature is</p>
-<pre><code>ghci&gt;:t SimplePerson &quot;Jan&quot;
+<pre><code>ghci&gt; :t SimplePerson &quot;Jan&quot;
 SimplePerson &quot;Jan&quot; :: String -&gt; Person</code></pre>
-<p>The <code>map</code> function applies the method of the first parameter to the list of partial <code>SimplePerson</code>s and returns an array of <code>Person</code>.</p>
+<p>The <code>map</code> function applies the method</p>
+<pre><code>ghci&gt; :t ($ &quot;Hake&quot;)
+($ &quot;Hake&quot;) :: ([Char] -&gt; b) -&gt; b</code></pre>
+<p>to the list of partial <code>SimplePerson</code>s and returns an array of <code>Person</code>.</p>
 <h1 id="real-world-projects">Real world projects</h1>
 <p>There are several Haskell projects, which are really remarkable. Without any order these projects are worth looking into it.</p>
 <h2 id="hakyll">hakyll</h2>

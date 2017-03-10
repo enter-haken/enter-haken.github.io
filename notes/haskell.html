@@ -35,7 +35,7 @@ putStr :: String -&gt; IO ()</code></pre>
 <h1 id="types">Types</h1>
 <p>With the <code>data</code> keyword you define new types in Haskell. In <a href="https://hackage.haskell.org/package/base-4.9.1.0/docs/Prelude.html#t:Bool">prelude</a> the <code>Bool</code> definition looks like.</p>
 <pre><code>data Bool = True | False</code></pre>
-<p><code>True</code> and <code>False</code> are value constructors. They can have zero or more parameters.</p>
+<p><code>True</code> and <code>False</code> are <em>value constructors.</em> Value constructors can have zero or more parameters.</p>
 <pre><code>data Person = SimplePerson String String</code></pre>
 <p>In this example a <code>Person</code> can be created using the value constructor <code>SimplePerson</code>. The first parameter will be the first name, the second the last name.</p>
 <pre><code>ghci&gt; :t SimplePerson 
@@ -75,7 +75,18 @@ SimplePerson &quot;Jan&quot; :: String -&gt; Person</code></pre>
 <p>The <code>map</code> function applies the method</p>
 <pre><code>ghci&gt; :t ($ &quot;Hake&quot;)
 ($ &quot;Hake&quot;) :: ([Char] -&gt; b) -&gt; b</code></pre>
-<p>to the list of partial <code>SimplePerson</code>s and returns an array of <code>Person</code>.</p>
+<p>to the list of partial <code>SimplePerson</code>s and returns an array of <code>Person</code>. <!--
+# Type classes
+
+Type classes are a kind of interface, a behaviour a *type* can have.
+
+Looking at the definition of the *+* function
+
+```
+ghci> :t (+)
+(+) :: Num a => a -> a -> a
+```
+--></p>
 <h1 id="real-world-projects">Real world projects</h1>
 <p>There are several Haskell projects, which are really remarkable. Without any order these projects are worth looking into it.</p>
 <h2 id="hakyll">hakyll</h2>

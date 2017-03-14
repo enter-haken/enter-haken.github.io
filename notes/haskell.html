@@ -93,6 +93,10 @@ ghci> :t (+)
 <p>This static site generator is used to generate this blog. Outgoing from its application, <a href="https://jaspervdj.be/hakyll/">hakyll</a> is very io centric. It is a good example to show, when and where to make pure or impure functions. On hakylls homepage, you can find <a href="https://jaspervdj.be/hakyll/examples.html">several examples</a> how to build a static website. It take a lot advantage from the next project.</p>
 <h2 id="pandoc">pandoc</h2>
 <p>This swiss-army knife let you convert files between different markup formats. There are several readers and writers available. <a href="http://pandoc.org/">Pandoc</a> uses an internal AST which can be manipulated by <a href="http://pandoc.org/scripting.html">filters</a>.</p>
+<pre><code>Prelude&gt; :m Text.Pandoc
+Prelude Text.Pandoc&gt; readMarkdown def &quot;# Test&quot;
+Right (Pandoc (Meta {unMeta = fromList []}) [Header 1 (&quot;test&quot;,[],[]) [Str &quot;Test&quot;]])</code></pre>
+<p>This litte example reads markdown with <a href="http://hackage.haskell.org/package/pandoc-1.19.2.1/docs/Text-Pandoc-Options.html#v:def">default reader options</a></p>
 
         </div>
         <div id="footer">

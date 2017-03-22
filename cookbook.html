@@ -148,6 +148,15 @@ git unstage file.txt</code></pre>
 <ul>
 <li><code>START &quot;&quot; http://localhost</code> - starts a default browser with <code>http://localhost</code> or opens a new tab.</li>
 </ul>
+<h1 id="net-c">.NET / C#</h1>
+<h2 id="force-to-copy-an-unused-assembly">Force to copy an unused assembly</h2>
+<p>When the compiler sees no usage of a referenced assembly, it won’t be copied to the output folder. If you need for some reason the assembly in your output folder, you can create a dummy usage, which forces the compiler to copy the assembly.</p>
+<pre><code>private static void Dummy()
+{
+    Action&lt;Type&gt; doesNothingWith = _ =&gt; { };
+    var anyType = typeof(ReferencedAssembly.SomeClass);
+    doesNothingWith(anyType);
+}</code></pre>
         </div>
         <div id="footer">
             Copyright &copy; 2016 - 2017 by Jan Frederik Hake | 

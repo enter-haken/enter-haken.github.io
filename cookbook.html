@@ -157,6 +157,16 @@ git unstage file.txt</code></pre>
     var anyType = typeof(ReferencedAssembly.SomeClass);
     doesNothingWith(anyType);
 }</code></pre>
+<h1 id="windows">Windows</h1>
+<p>Here comes the Windows related stuff</p>
+<h2 id="chocolatey">Chocolatey</h2>
+<p>A package manager for Windows.</p>
+<h3 id="installation">Installation</h3>
+<p>Before the installation you must allow remote scripts to run. Start a powershell with administrator rights</p>
+<pre><code>Set-ExecutionPolicy RemoteSigned
+iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex</code></pre>
+<h3 id="ack">Ack</h3>
+<pre><code>choco install ack </code></pre>
         </div>
         <div id="footer">
             Copyright &copy; 2016 - 2017 by Jan Frederik Hake | 

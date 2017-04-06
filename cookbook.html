@@ -157,6 +157,18 @@ git unstage file.txt</code></pre>
     var anyType = typeof(ReferencedAssembly.SomeClass);
     doesNothingWith(anyType);
 }</code></pre>
+<h2 id="development-stack">Development stack</h2>
+<p>Sometimes it is usefull, to start a build from the command line. A <code>make_debugBuild.bat</code> can look like</p>
+<pre><code>call &quot;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat&quot;
+msbuild SolutionName.sln /p:Configuration=Debug</code></pre>
+<p>For a <code>make_releaseBuild.bat</code> you can just change the msbuild <code>Configuration</code> parameter.</p>
+<pre><code>call &quot;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat&quot;
+msbuild SolutionName.sln /p:Configuration=Release</code></pre>
+<p>To delete common generated / build folders from command line, you can use a <code>cleanup.bat</code> like</p>
+<pre><code>FOR /F &quot;tokens=*&quot; %%G IN ('DIR /B /AD /S obj') DO RMDIR /S /Q &quot;%%G&quot;
+FOR /F &quot;tokens=*&quot; %%G IN ('DIR /B /AD /S bin') DO RMDIR /S /Q &quot;%%G&quot;
+
+REM RMDIR /S /Q AdditionalFolderToDelete</code></pre>
 <h1 id="windows">Windows</h1>
 <p>Here comes the Windows related stuff</p>
 <h2 id="chocolatey">Chocolatey</h2>

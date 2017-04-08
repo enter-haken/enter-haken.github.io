@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>enter_haken - sandcastle</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="navigation">
+                <a href="../">enter_haken</a>
+                <a href="../cookbook.html">cookbook</a>
+                <a href="../notes.html">notes</a>
+                <a href="../read.html">read</a>
+                <a href="../about.html">about</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>sandcastle</h1>
+
+<p>Donald Knuth wrote about <a href="https://en.wikipedia.org/wiki/Literate_programming">literate programming</a> years ago. Literate programming is about keeping the documentation near to the implementation. Over years, several products like <a href="http://www.stack.nl/~dimitri/doxygen/">doxygen</a> are helping to solve this kind of problem. There exists a product named <a href="https://github.com/EWSoftware/SHFB">sandcastle</a> for .NET based code. It is able to generate MSDN like documentation.</p>
+<!--more-->
+<p>At first you have to download the <a href="https://github.com/EWSoftware/SHFB/releases">latest</a> version of sandcastle. After creating a <code>.shfbproj</code> file, the <code>XML documentation file</code> check box in the <code>output</code> section of the project build configuration has to be enabled.</p>
+<h1 id="convenience-batch-files">convenience batch files</h1>
+<p>For convenience you can add some batch files to the solution root.</p>
+<h2 id="make-debug-build">make debug build</h2>
+<pre><code>REM --
+REM -- This script builds the solution for the debug configuration
+REM --
+
+call &quot;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat&quot;
+msbuild SandCastleTest.sln /p:Configuration=Debug
+
+IF &quot;%1&quot; == &quot;--noPause&quot; goto END
+
+pause
+
+:END</code></pre>
+<h2 id="remove-generated-files">remove generated files</h2>
+<pre><code>REM --
+REM -- This script deletes all obj / bin folders from solution
+REM --
+
+FOR /F &quot;tokens=*&quot; %%G IN ('DIR /B /AD /S obj') DO RMDIR /S /Q &quot;%%G&quot;
+FOR /F &quot;tokens=*&quot; %%G IN ('DIR /B /AD /S bin') DO RMDIR /S /Q &quot;%%G&quot;
+
+REM -- delete generated folders from solution root directory
+RMDIR /S /Q Help</code></pre>
+<h2 id="generate-help-files-and-start-local-http-server">generate help files and start local http server</h2>
+<pre><code>@ECHO OFF
+REM --
+REM -- build documentation
+REM --
+
+CALL deepClean.bat
+CALL make_debugBuild.bat --noPause
+
+REM -- build documentation
+CALL &quot;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat&quot;
+msbuild SandCastleTestDocumentation.shfbproj
+
+REM -- open browser first ...
+START &quot;&quot; http://localhost:8000
+REM -- ... because the web server is blocking
+
+cd Help
+
+REM -- the next command creates a local web server and serves 
+REM -- recursively all contents from the current folder.
+
+REM -- this works, if python &gt;3 is installed, 
+REM -- and the path variable is up to date
+python -m http.server</code></pre>
+<p>It is assumed, that python &gt; 3.x is installed. You can choose an other web server, if you like.</p>
+<h1 id="start">Start</h1>
+<p>At the beginning there are a lot of warnings in the <code>Error List</code>. These are reminder for missing comments. When the documentation is build at this point, it will be very empty. Now is the time fill some contents.</p>
+<p>Lets start with a simple <a href="linkToGithub">example</a>.</p>
+<p>A printable document is described by an interface.</p>
+<pre><code>namespace SandcastleTest.Base
+{
+    /// &lt;summary&gt;
+    /// A printable document
+    /// &lt;/summary&gt;
+    public interface IPrintable
+    {
+        /// &lt;summary&gt;
+        /// Prints a &lt;see cref=&quot;IPrintable&quot;/&gt;
+        /// &lt;/summary&gt;
+        void Print();
+    }
+}</code></pre>
+<p>The <code>&lt;see&gt;</code> tag references a type within a documentation. If the <code>cref</code> attribute value is misspelled, you get a compiler warning.</p>
+<p>If you apply the <code>IPrintable</code> interface to a <code>Document</code>,</p>
+<pre><code>using System;
+using System.Text;
+
+namespace SandcastleTest.Base
+{
+    /// &lt;inheritdoc/&gt;
+    /// &lt;summary&gt;
+    /// A document
+    /// &lt;/summary&gt;
+    public class Document : IPrintable
+    {
+        /// &lt;summary&gt;
+        /// Documents title. 
+        /// &lt;/summary&gt;
+        public string Title { get; set; }
+
+        /// &lt;summary&gt;
+        /// Content of a document
+        /// &lt;/summary&gt;
+        public string Content { get; set; }
+
+        /// &lt;inheritdoc/&gt;
+        public void Print()
+        {
+            Console.WriteLine(ToString());
+        }
+
+        /// &lt;summary&gt;
+        /// Get a string representation of a &lt;see cref=&quot;Document&quot;/&gt;
+        /// &lt;/summary&gt;
+        /// &lt;returns&gt;the documents &lt;see cref=&quot;Title&quot;/&gt; and the &lt;see cref=&quot;Content&quot;/&gt;&lt;/returns&gt;
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(Title);
+            sb.AppendLine(Content);
+
+            return sb.ToString();
+        }
+    }
+}</code></pre>
+<p>you can see, the interface method <code>Print()</code> does not has to be documented. The documentation is inherited from the interface. The <code>&lt;inheritdoc&gt;</code> tag is used for this application.</p>
+<p>For namespace documentation a <code>NamespaceDoc</code> class has to be added to the namespace.</p>
+<pre><code>using System.Runtime.CompilerServices;
+
+namespace SandcastleTest.Base
+{
+    /// &lt;summary&gt;
+    /// this comment appears in the namespace documentation
+    /// &lt;/summary&gt;
+    [CompilerGenerated]
+    class NamespaceDoc
+    {
+        // this class is only used for namespace documentation
+    }
+}</code></pre>
+<p>The <code>CompilerGenerated</code> attribute prevents sandcastle to generate a documentation for the class itself.</p>
+<p>Together you get this <a href="../example/sandcastle/base/index.html">result</a></p>
+
+        </div>
+        <div id="footer">
+            Copyright &copy; 2016 - 2017 by Jan Frederik Hake | 
+            <a href="https://enter-haken.github.io/atom.xml">atom feed</a> | 
+            generated by <a href="http://jaspervdj.be/hakyll">Hakyll</a> | 
+            <a href="https://github.com/enter-haken/blog">blog source</a>
+        </div>
+    </body>
+</html>

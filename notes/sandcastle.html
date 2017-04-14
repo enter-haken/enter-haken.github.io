@@ -93,10 +93,8 @@ python -m http.server</code></pre>
 }</code></pre>
 <p>The <code>&lt;see&gt;</code> tag references a type within a documentation. If the <code>cref</code> attribute value is misspelled, you get a compiler warning.</p>
 <p>If you apply the <code>IPrintable</code> interface to a <code>Document</code>,</p>
-<pre><code>using System;
-using System.Text;
-
-namespace SandcastleTest.Base
+<p>using System; using System.Text;</p>
+<pre><code>namespace SandcastleTest.Base
 {
     /// &lt;inheritdoc/&gt;
     /// &lt;summary&gt;
@@ -136,9 +134,8 @@ namespace SandcastleTest.Base
 }</code></pre>
 <p>you can see, the interface method <code>Print()</code> does not has to be documented. The documentation is inherited from the interface. The <code>&lt;inheritdoc&gt;</code> tag is used for this application.</p>
 <p>For namespace documentation a <code>NamespaceDoc</code> class has to be added to the namespace.</p>
-<pre><code>using System.Runtime.CompilerServices;
-
-namespace SandcastleTest.Base
+<p>using System.Runtime.CompilerServices;</p>
+<pre><code>namespace SandcastleTest.Base
 {
     /// &lt;summary&gt;
     /// this comment appears in the namespace documentation
@@ -150,7 +147,7 @@ namespace SandcastleTest.Base
     }
 }</code></pre>
 <p>The <code>CompilerGenerated</code> attribute prevents sandcastle to generate a documentation for the class itself.</p>
-<p>For this <a href="https://github.com/enter-haken/SandcastleDemo/tree/master/SandcastleTest">code</a> you get this <a href="../example/sandcastle/base/index.html">result</a></p>
+<p>For this <a href="https://github.com/enter-haken/SandcastleDemo/tree/master/SandcastleTest">code</a> you get this <a href="../example/sandcastle/base/index.html">result</a>.</p>
 
         </div>
         <div id="footer">

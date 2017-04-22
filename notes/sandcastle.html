@@ -372,10 +372,10 @@ namespace SandcastleTest.Generic.DAL.FileSystemStorage
         }
     }
 }</code></pre>
-<p>The interface documentation is inherited. The <code>Create</code> method can throw an exception. Therefore the documentation can be added.</p>
-<p>As you can see the more concrete the code is, the documentation has to be added. You must try to write the base documentation as reusable as possible.</p>
+<p>This code should just work. I know this is not performance friendly. For a demonstration it is just enough.</p>
+<p>As you can see in the <a href="../example/sandcastle/html/e8807ce7-b71c-ccbc-c71e-15c9299f5d9b.htm">generated result</a>, a more concrete class can inherit a part of the documentation of their base class and interface. You must try to write the base documentation as reusable as possible.</p>
 <p>If you like to store a <code>Customer</code> on file system, the classes can look like following.</p>
-<p>First a <code>Person</code> is needed. It can be assumed, that in a bigger application this class is a base class for human like entities (e.g. Customer, Employee, Manager …).</p>
+<p>First a kind of <code>Person</code> is needed. It can be assumed, that in a bigger application this class is a base class for human like entities (e.g. Customer, Employee, Manager …).</p>
 <pre><code>namespace SandcastleTest.Generic.POCO
 {
     /// &lt;summary&gt;
@@ -403,8 +403,7 @@ namespace SandcastleTest.Generic.DAL.FileSystemStorage
         }
     }
 }</code></pre>
-<p>Deriving from <code>PocoBase</code> gives every <code>Person</code> an identifier.</p>
-<p>The <code>Customer</code> it self will be smaller.</p>
+<p>Deriving from <code>PocoBase</code> gives every <code>Person</code> an identifier. The <a href="../example/sandcastle/html/cc5624ed-c08d-ab34-c42e-4b97de71fa4c.htm">documentation</a> for <code>FistName</code> and <code>LastName</code> can be inherited from deriving classes.</p>
 <pre><code>namespace SandcastleTest.Generic.POCO
 {
     /// &lt;summary&gt;
@@ -427,8 +426,8 @@ namespace SandcastleTest.Generic.DAL.FileSystemStorage
         }
     }
 }</code></pre>
-<p>For this example the customer has a <code>CustomerNumber</code>. Customer related stuff can be added here, if needed.</p>
-<p>The simplest class for doing CRUD operation on a customer for a file system is just a empty subclass of <code>Crud&lt;T&gt;</code>.</p>
+<p>For this example the <code>Customer</code> has a <code>CustomerNumber</code>. Customer related stuff can be added here, if needed. Every thing else is derived from the base class <code>Person</code>. The <a href="../example/sandcastle/html/7696b3d3-c681-f48b-bda3-db48fcaecb00.htm">result</a> looks promising.</p>
+<p>The simplest class for doing CRUD operation on a <code>Customer</code> for a file system is just a empty subclass of <code>Crud&lt;T&gt;</code>.</p>
 <pre><code>using SandcastleTest.Generic.POCO;
 
 namespace SandcastleTest.Generic.DAL.FileSystemStorage
@@ -440,7 +439,8 @@ namespace SandcastleTest.Generic.DAL.FileSystemStorage
     {
     }
 }</code></pre>
-<p>For this <a href="https://github.com/enter-haken/SandcastleDemo/tree/master/SandcastleTest">code</a> you get this <a href="../example/sandcastle/index.html">result</a>.</p>
+<p>The interesting thing here is the <a href="../example/sandcastle/html/f9bf04a0-9eaa-8366-d929-d5814c9b97cd.htm">generated documentation</a> for the above class. You can see, that most method documentation is inherited from base classes and interfaces.</p>
+<p>You can explore more from the <a href="https://github.com/enter-haken/SandcastleDemo/tree/master/SandcastleTest">test code</a>, or you can browse through the generated <a href="../example/sandcastle/index.html">result</a>.</p>
 
         </div>
         <div id="footer">

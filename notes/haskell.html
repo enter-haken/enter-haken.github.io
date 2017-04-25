@@ -69,13 +69,13 @@ ghci&gt; addOne 10
 <p>When you consider the <code>map</code> function</p>
 <pre><code>ghci&gt; :t map
 map :: (a -&gt; b) -&gt; [a] -&gt; [b]</code></pre>
-<p>from the right site, you can see that <code>[b]</code> is the return type of the <code>map</code> function. In this case it is an array of <code>Person</code>, so <code>b</code> is a <code>Person</code>. the <code>[a]</code> is a list of <code>SimplePerson</code>is which takes a last name and returns a Person. The signature is</p>
+<p>from the right site, you can see that <code>[b]</code> is the return type of the <code>map</code> function. In this case it is a list of <code>Person</code>, so <code>b</code> is a <code>Person</code>. the <code>[a]</code> is a list of <code>SimplePerson</code>is which takes a last name and returns a Person. The signature is</p>
 <pre><code>ghci&gt; :t SimplePerson &quot;Jan&quot;
 SimplePerson &quot;Jan&quot; :: String -&gt; Person</code></pre>
 <p>The <code>map</code> function applies the method</p>
 <pre><code>ghci&gt; :t ($ &quot;Hake&quot;)
 ($ &quot;Hake&quot;) :: ([Char] -&gt; b) -&gt; b</code></pre>
-<p>to the list of partial <code>SimplePerson</code>s and returns an array of <code>Person</code>. <!--
+<p>to the list of partial <code>SimplePerson</code>s and returns a list of <code>Person</code>. <!--
 # Type classes
 
 Type classes are a kind of interface, a behaviour a *type* can have.

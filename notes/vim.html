@@ -58,6 +58,19 @@ filetype plugin indent on</code></pre>
 <h2 id="vim-airline">vim-airline</h2>
 <p><a href="https://github.com/vim-airline/vim-airline">vim-airline</a> gives you a quit fast status- and tab line.</p>
 <pre><code>Plugin 'bling/vim-airline'</code></pre>
+<h1 id="misc">misc</h1>
+<p>This are some vim hints, which are helpfull from time to time.</p>
+<h2 id="pretty-print-xml-on-a-windows-machine">pretty print xml on a windows machine</h2>
+<p>If you want to pretty print a xml file on a windows machine, you need a running version of <code>libxml</code>. Therefore you need the following files from the <a href="http://xmlsoft.org/sources/win32/">libxml project downloads</a>.</p>
+<ul>
+<li><a href="http://xmlsoft.org/sources/win32/libxml2-2.7.8.win32.zip">libXml</a></li>
+<li><a href="http://xmlsoft.org/sources/win32/iconv-1.9.2.win32.zip">iConv</a></li>
+<li><a href="http://xmlsoft.org/sources/win32/zlib-1.2.5.win32.zip">zLib</a></li>
+</ul>
+<p>The binary folders should be added to the system path, so <code>xmllint.exe</code> is accessable from command line.</p>
+<p>If you want to pretty print a xml in a open buffer you can execute</p>
+<pre><code>:% !xmllint.exe &quot;%&quot; --format</code></pre>
+<p>The current open buffer is replaced with the result of <code>xmllint.exe</code>.</p>
 
         </div>
         <div id="footer">

@@ -22,6 +22,23 @@
             <ul id="list">
     
         <li>
+            <a href="./notes/gentoo.html">gentoo</a>
+            
+            <p>
+                <p>Gentoo is a source based Linux distribution. The <a href="https://wiki.gentoo.org/wiki/Handbook:AMD64">handbook</a> is a good starting point. You can get information about installing a system, working with a working system or working with portage.</p>
+<p>The portage system is the heart of gentoo. The packages metadata is stored in <code>/usr/portage</code>. The <code>sys-apps/portage</code> package contains the <code>emerge</code> tool. This tool is used for portage operations.</p>
+<p>If you want to get the recent version of portage you have to call</p>
+<pre><code>emerge --sync</code></pre>
+<p>At this point no package is updated. If you want to update the whole system you can call</p>
+<pre><code>emerge -uNDav world</code></pre>
+<p>This command updates all packages contained in the <code>/var/lib/portage/world</code> file.</p>
+
+            </p>
+            <a href="./notes/gentoo.html">more</a>
+            
+        </li>
+    
+        <li>
             <a href="./notes/haskell.html">Haskell</a>
             
             <p>

@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>enter_haken - querying public transport data</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="navigation">
+                <a href="../">enter_haken</a>
+                <a href="../projects.html">projects</a>
+                <a href="../cookbook.html">cookbook</a>
+                <a href="../notes.html">notes</a>
+                <a href="../read.html">read</a>
+                <a href="../about.html">about</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>querying public transport data</h1>
+
+<div class="info">
+    
+    Posted on May 27, 2017
+    
+        
+</div>
+
+<p>Last month a ICE derailed before entering the Dortmund main station. This got my timetable mixed up. Trains did not drive towards Dortmund from the west for weeks. The timetable got kind of useless for a while.</p>
+<p>In the morning, I could ride from Dortmund to Wattenscheid, in the evening I had to ride via Gelsenkirchen to Dortmund. Some trains could pass Dortmund coming from Gelsenkirchen, others didn’t. Every day, I checked my train on a <a href="http://abfahrtsmonitor.vrr.de">electronic departure monitor</a>. It showed, which train, including the delay passes a certain train station. For me it was enough information, because I does not have to change trains on my way to work.</p>
+<p>The site was ok, but I needed something more convenient. Something I could call from command line, so I take a further look.</p>
+<!--more-->
+<h1 id="finding-a-station">finding a station</h1>
+<div class="figure">
+<img src="../images/vrrStationQuery.png" />
+
+</div>
+<p>If you are looking for Dortmund main station, the Site sends a get request to</p>
+<pre><code>http://abfahrtsmonitor.vrr.de/backend/app.php/api/stations/search?query=Dortmund</code></pre>
+<p>A list of possible stations with a kind of id is returned.</p>
+<pre><code>{
+    &quot;suggestions&quot;: [{
+        &quot;data&quot;: &quot;20000605&quot;,
+        &quot;value&quot;: &quot;Dortmund Zoo&quot;
+    }, {
+        &quot;data&quot;: &quot;20000131&quot;,
+        &quot;value&quot;: &quot;Dortmund Hbf&quot;
+    }, {
+        &quot;data&quot;: &quot;20000363&quot;,
+        &quot;value&quot;: &quot;Dortmund Wilo&quot;
+    }, {
+        &quot;data&quot;: &quot;20000385&quot;,
+        &quot;value&quot;: &quot;Dortmund Poth&quot;
+    }, {
+        &quot;data&quot;: &quot;20001193&quot;,
+        &quot;value&quot;: &quot;Dortmund IKEA&quot;
+    },
+    ...
+    ]
+}</code></pre>
+<p>This id is needed to make the actual time table request.</p>
+<h1 id="a-request-for-a-time-table">a request for a time table</h1>
+<p>The site sends a form post to <code>http://abfahrtsmonitor.vrr.de/backend/app.php/api/stations/table</code>. When you look at the Station Dortmund you have form data like</p>
+<pre><code>table[departure][stationId]:20000131
+table[departure][stationName]:Dortmund, Hbf
+table[departure][platformVisibility]:1
+table[departure][transport]:0,1,2,3,4,5
+table[departure][useAllLines]:1
+table[departure][linesFilter]:
+table[departure][rowCount]:6
+table[departure][distance]:0
+table[departure][marquee]:0
+table[sortBy]:0</code></pre>
+<p>It looks like, that the previous id is the stationId.</p>
+<p>If you are a commuter, you don’t care for intercity trains.</p>
+<div class="figure">
+<img src="../images/vrrLines.png" />
+
+</div>
+<p>The <code>transport</code> numbers are in the same sequence as it appears in the form. For me, all I need is <code>Zug</code> and <code>S-Bahn</code> (these are the train types a commuter uses regularly.)</p>
+<h1 id="some-coding">some coding</h1>
+<p>If you want to make a form post without a form, you can use a <a href="https://msdn.microsoft.com/en-us/library/system.net.http.httpclient(v=vs.118).aspx">HTTPClient</a>.</p>
+<p>You can use something like</p>
+<pre><code>var client = new HttpClient();
+
+var departure = new Dictionary&lt;string,string&gt;
+{
+    { &quot;table[departure][stationId]&quot; , &quot;20000131&quot; },    
+    ...
+};
+
+var content = new FormUrlEncodedContent(departure);
+var response = await client.PostAsync(&quot;http://abfahrtsmonitor.vrr.de/backend/app.php/api/stations/table&quot;, content);
+var responseString = await response.Content.ReadAsStringAsync();</code></pre>
+<p>This will work as expected. The <code>responseString</code> will contain the requested data as a json response.</p>
+<pre><code>{
+    &quot;departureData&quot;: [{
+        &quot;name&quot;: &quot;RE6&quot;,
+        &quot;lineNumber&quot;: &quot;RE6&quot;,
+        &quot;lineCode&quot;: &quot;90E06&quot;,
+        &quot;subname&quot;: &quot;R-Bahn&quot;,
+        &quot;direction&quot;: &quot;K\u00f6ln\/Bonn Flughafen Bf,K\u00f6ln&quot;,
+        &quot;directionCode&quot;: &quot;R&quot;,
+        &quot;route&quot;: &quot;Bochum Hbf - Bochum Wattenscheid - Essen Hauptbahnhof - M\u00fclheim Hauptbahnhof - Duisburg Hbf - D\u00fcsseldorf Flughafen Bahnhof - D\u00fcsseldorf Hbf - Neuss Hauptbahnhof - Dormagen Bf - Dom \/ Hbf,K\u00f6ln - K\u00f6ln\/Bonn Flughafen Bf,K\u00f6ln&quot;,
+        &quot;type&quot;: 1,
+        &quot;day&quot;: &quot;27&quot;,
+        &quot;month&quot;: &quot;5&quot;,
+        &quot;year&quot;: &quot;2017&quot;,
+        &quot;hour&quot;: &quot;13&quot;,
+        &quot;minute&quot;: &quot;06&quot;,
+        &quot;orgDay&quot;: &quot;27&quot;,
+        &quot;orgHour&quot;: &quot;13&quot;,
+        &quot;orgMinute&quot;: &quot;06&quot;,
+        &quot;countdown&quot;: 1,
+        &quot;platform&quot;: &quot;18&quot;,
+        &quot;delay&quot;: &quot;0&quot;,
+        &quot;isRealTime&quot;: true,
+        &quot;isDateOverflow&quot;: false,
+        &quot;lineInfo&quot;: {
+            &quot;lineInfo&quot;: {
+                &quot;text&quot;: &quot;&quot;,
+                &quot;priority&quot;: 0
+            },
+            &quot;lineBlocking&quot;: {
+                &quot;text&quot;: &quot;&quot;,
+                &quot;priority&quot;: 0
+            }
+        },
+        &quot;fullTime&quot;: 1495883160,
+        &quot;orgFullTime&quot;: 1495883160,
+        &quot;supplement&quot;: &quot;&quot;,
+        &quot;key&quot;: &quot;10618&quot;
+    },
+    ...
+    ],
+    &quot;departureInfo&quot;: {
+        &quot;stopInfo&quot;: {
+            &quot;text&quot;: &quot;&quot;
+        },
+        &quot;stopBlocking&quot;: {
+            &quot;text&quot;: &quot;&quot;
+        }
+    },
+    &quot;globalInfo&quot;: &quot;&quot;,
+    &quot;stationName&quot;: &quot;Dortmund, Hbf&quot;,
+    &quot;marquee&quot;: 0,
+    &quot;stationInfo&quot;: {
+        &quot;aufzug&quot;: &quot;Aufzug&quot;,
+        &quot;info&quot;: &quot;dyn. Fahrgastinformation&quot;,
+        &quot;automat&quot;: &quot;Fahrscheinautomat&quot;,
+        &quot;treppe&quot;: &quot;Fahrtreppe&quot;,
+        &quot;sitzen&quot;: &quot;Sitzgelegenheiten&quot;,
+        &quot;wc&quot;: &quot;WC&quot;
+    },
+    &quot;currentTime&quot;: 1495883148,
+    &quot;currentTimeReal&quot;: 1495883148
+}</code></pre>
+<p>Now I make something more readable out of the json response. With <a href="http://www.newtonsoft.com/json">JSON.net</a> you can deserialize a json string to a .net class. It will try to deserialize as much as possible.</p>
+<p>For my little console program, I only need the <code>stationName</code> from the root object. The line items for the trains contains the <code>departureData</code> array.</p>
+<pre><code>using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace VRRMonitor
+{
+    public class DepartureResponse
+    {
+        public List&lt;DepartureItem&gt; DepartureData { get; set; }
+
+        public string StationName { get; set; }
+    }
+}</code></pre>
+<p>For the <code>DepartureItem</code>, I take the following fields.</p>
+<pre><code>using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace VRRMonitor
+{
+    public class DepartureItem
+    {
+        public string Name { get; set; }
+        public string LineNumber { get; set; }
+        public string SubName { get; set; }
+        public string Direction { get; set; }
+
+        public string Route { get; set; }
+        public MeansOfTransport Type { get; set; } 
+        public int Day { get; set; }
+        public int Month { get; set; }
+        public int Year { get; set; }
+        public int Hour { get; set; }
+        public int Minute { get; set; }
+        public int OrgDay { get; set; }
+        public int OrgMonth { get; set; }
+        public int OrgYear { get; set; }
+        public int OrgHour { get; set; }
+        public int OrgMinute { get; set; }
+        public string Platform { get; set; }
+
+        public int? Delay { get; set; }
+
+  }
+}</code></pre>
+<p>The dates are all send via splitted properties. I put them together within one field.</p>
+<pre><code>public DateTime CurrentDeparture 
+{
+    get
+    {
+        return new DateTime(Year, Month, Day, Hour, Minute, 0);
+    }
+}
+
+public DateTime OriginalDeparture
+{
+    get
+    {
+        return new DateTime(OrgYear, OrgMonth, OrgDay, OrgHour, OrgMinute, 0);
+    }
+}</code></pre>
+<p>The train kind can be casted into an enum. JSON.NET does the the work for you.</p>
+<pre><code>using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace VRRMonitor
+{
+    public enum MeansOfTransport
+    {
+        ICE = 0,
+        Zug = 1,
+        SBahn = 2,
+        UBahn = 3,
+        StrassenBahn = 4,
+        Bus = 5
+    }
+}</code></pre>
+<p>The numbers are not mandatory, but it helps, if you are debugging calls with raw data.</p>
+<p>For a console output, I have to override the <code>ToString()</code> methods of the classes which are used for deserialization. A <code>DepartureItem</code> can be displayed as</p>
+<pre><code>public override string ToString()
+{
+    return $&quot;Aktuell {Hour.ToString(&quot;D2&quot;)}:{Minute.ToString(&quot;D2&quot;)} - Verspätung {Delay ?? 0} - {Name} - Richtung {Direction}&quot;;
+}</code></pre>
+<p>The <code>DepartureResponse</code> has the <code>StationName</code> and additionally the <code>DepartureData</code> items.</p>
+<pre><code>public override string ToString()
+{
+    if (DepartureData == null)
+        return string.Empty;
+
+    var sb = new StringBuilder();
+    sb.AppendLine($&quot;Station name: {StationName}&quot;);
+
+    foreach (var result in DepartureData.Select(x =&gt; x.ToString()))
+        sb.AppendLine(result);
+
+    return sb.ToString();
+}</code></pre>
+<p>If you like the complete working example you can take a look at the <a href="https://github.com/enter-haken/VRRMonitor">code</a>.</p>
+
+        </div>
+        <div id="footer">
+            Copyright &copy; 2016 - 2017 by Jan Frederik Hake | 
+            <a href="https://enter-haken.github.io/atom.xml">atom feed</a> | 
+            generated by <a href="http://jaspervdj.be/hakyll">Hakyll</a> | 
+            <a href="https://github.com/enter-haken/blog">blog source</a>
+        </div>
+    </body>
+</html>

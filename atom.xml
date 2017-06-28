@@ -8,264 +8,230 @@
         <name>Jan Frederik Hake</name>
         <email>jan_hake@gmx.de</email>
     </author>
-    <updated>2017-05-27T00:00:00Z</updated>
+    <updated>2017-06-28T00:00:00Z</updated>
     <entry>
-    <title>querying public transport data</title>
-    <link href="https://enter-haken.github.io/posts/2017-05-27-vrr.html" />
-    <id>https://enter-haken.github.io/posts/2017-05-27-vrr.html</id>
-    <published>2017-05-27T00:00:00Z</published>
-    <updated>2017-05-27T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Last month a ICE derailed before entering the Dortmund main station. This got my timetable mixed up. Trains did not drive towards Dortmund from the west for weeks. The timetable got kind of useless for a while.</p>
-<p>In the morning, I could ride from Dortmund to Wattenscheid, in the evening I had to ride via Gelsenkirchen to Dortmund. Some trains could pass Dortmund coming from Gelsenkirchen, others didn’t. Every day, I checked my train on a <a href="http://abfahrtsmonitor.vrr.de">electronic departure monitor</a>. It showed, which train, including the delay passes a certain train station. For me it was enough information, because I does not have to change trains on my way to work.</p>
-<p>The site was ok, but I needed something more convenient. Something I could call from command line, so I take a further look.</p>
+    <title>providing test data for databases</title>
+    <link href="https://enter-haken.github.io/posts/2017-06-28-testdata.html" />
+    <id>https://enter-haken.github.io/posts/2017-06-28-testdata.html</id>
+    <published>2017-06-28T00:00:00Z</published>
+    <updated>2017-06-28T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>A few days ago, I did some experiments with PostgreSQL JSONB columns. A used a simple person model for my tests, containing address data for a person.</p>
+<p>For my tests, I needed some test data. I could have generated some random strings, but I wanted to fill the database with more realistic data. I have often thought of a test data generator for commonly used data models. If you want to generate randomized addresses for a person, you need a big list of street names and city names. When it comes to geographical data like this, <a href="https://www.openstreetmap.org">open street maps</a> comes into the game.</p>
 <!--more-->
-<h1 id="finding-a-station">finding a station</h1>
-<div class="figure">
-<img src="/images/vrrStationQuery.png" />
-
-</div>
-<p>If you are looking for Dortmund main station, the Site sends a get request to</p>
-<pre><code>http://abfahrtsmonitor.vrr.de/backend/app.php/api/stations/search?query=Dortmund</code></pre>
-<p>A list of possible stations with a kind of id is returned.</p>
-<pre><code>{
-    &quot;suggestions&quot;: [{
-        &quot;data&quot;: &quot;20000605&quot;,
-        &quot;value&quot;: &quot;Dortmund Zoo&quot;
-    }, {
-        &quot;data&quot;: &quot;20000131&quot;,
-        &quot;value&quot;: &quot;Dortmund Hbf&quot;
-    }, {
-        &quot;data&quot;: &quot;20000363&quot;,
-        &quot;value&quot;: &quot;Dortmund Wilo&quot;
-    }, {
-        &quot;data&quot;: &quot;20000385&quot;,
-        &quot;value&quot;: &quot;Dortmund Poth&quot;
-    }, {
-        &quot;data&quot;: &quot;20001193&quot;,
-        &quot;value&quot;: &quot;Dortmund IKEA&quot;
-    },
-    ...
-    ]
-}</code></pre>
-<p>This id is needed to make the actual time table request.</p>
-<h1 id="a-request-for-a-time-table">a request for a time table</h1>
-<p>The site sends a form post to <code>http://abfahrtsmonitor.vrr.de/backend/app.php/api/stations/table</code>. When you look at the Station Dortmund you have form data like</p>
-<pre><code>table[departure][stationId]:20000131
-table[departure][stationName]:Dortmund, Hbf
-table[departure][platformVisibility]:1
-table[departure][transport]:0,1,2,3,4,5
-table[departure][useAllLines]:1
-table[departure][linesFilter]:
-table[departure][rowCount]:6
-table[departure][distance]:0
-table[departure][marquee]:0
-table[sortBy]:0</code></pre>
-<p>It looks like, that the previous id is the stationId.</p>
-<p>If you are a commuter, you don’t care for intercity trains.</p>
-<div class="figure">
-<img src="/images/vrrLines.png" />
-
-</div>
-<p>The <code>transport</code> numbers are in the same sequence as it appears in the form. For me, all I need is <code>Zug</code> and <code>S-Bahn</code> (these are the train types a commuter uses regularly.)</p>
-<h1 id="some-coding">some coding</h1>
-<p>If you want to make a form post without a form, you can use a <a href="https://msdn.microsoft.com/en-us/library/system.net.http.httpclient(v=vs.118).aspx">HTTPClient</a>.</p>
-<p>You can use something like</p>
-<pre><code>var client = new HttpClient();
-
-var departure = new Dictionary&lt;string,string&gt;
-{
-    { &quot;table[departure][stationId]&quot; , &quot;20000131&quot; },    
-    ...
-};
-
-var content = new FormUrlEncodedContent(departure);
-var response = await client.PostAsync(&quot;http://abfahrtsmonitor.vrr.de/backend/app.php/api/stations/table&quot;, content);
-var responseString = await response.Content.ReadAsStringAsync();</code></pre>
-<p>This will work as expected. The <code>responseString</code> will contain the requested data as a json response.</p>
-<pre><code>{
-    &quot;departureData&quot;: [{
-        &quot;name&quot;: &quot;RE6&quot;,
-        &quot;lineNumber&quot;: &quot;RE6&quot;,
-        &quot;lineCode&quot;: &quot;90E06&quot;,
-        &quot;subname&quot;: &quot;R-Bahn&quot;,
-        &quot;direction&quot;: &quot;K\u00f6ln\/Bonn Flughafen Bf,K\u00f6ln&quot;,
-        &quot;directionCode&quot;: &quot;R&quot;,
-        &quot;route&quot;: &quot;Bochum Hbf - Bochum Wattenscheid - Essen Hauptbahnhof - M\u00fclheim Hauptbahnhof - Duisburg Hbf - D\u00fcsseldorf Flughafen Bahnhof - D\u00fcsseldorf Hbf - Neuss Hauptbahnhof - Dormagen Bf - Dom \/ Hbf,K\u00f6ln - K\u00f6ln\/Bonn Flughafen Bf,K\u00f6ln&quot;,
-        &quot;type&quot;: 1,
-        &quot;day&quot;: &quot;27&quot;,
-        &quot;month&quot;: &quot;5&quot;,
-        &quot;year&quot;: &quot;2017&quot;,
-        &quot;hour&quot;: &quot;13&quot;,
-        &quot;minute&quot;: &quot;06&quot;,
-        &quot;orgDay&quot;: &quot;27&quot;,
-        &quot;orgHour&quot;: &quot;13&quot;,
-        &quot;orgMinute&quot;: &quot;06&quot;,
-        &quot;countdown&quot;: 1,
-        &quot;platform&quot;: &quot;18&quot;,
-        &quot;delay&quot;: &quot;0&quot;,
-        &quot;isRealTime&quot;: true,
-        &quot;isDateOverflow&quot;: false,
-        &quot;lineInfo&quot;: {
-            &quot;lineInfo&quot;: {
-                &quot;text&quot;: &quot;&quot;,
-                &quot;priority&quot;: 0
-            },
-            &quot;lineBlocking&quot;: {
-                &quot;text&quot;: &quot;&quot;,
-                &quot;priority&quot;: 0
-            }
-        },
-        &quot;fullTime&quot;: 1495883160,
-        &quot;orgFullTime&quot;: 1495883160,
-        &quot;supplement&quot;: &quot;&quot;,
-        &quot;key&quot;: &quot;10618&quot;
-    },
-    ...
-    ],
-    &quot;departureInfo&quot;: {
-        &quot;stopInfo&quot;: {
-            &quot;text&quot;: &quot;&quot;
-        },
-        &quot;stopBlocking&quot;: {
-            &quot;text&quot;: &quot;&quot;
-        }
-    },
-    &quot;globalInfo&quot;: &quot;&quot;,
-    &quot;stationName&quot;: &quot;Dortmund, Hbf&quot;,
-    &quot;marquee&quot;: 0,
-    &quot;stationInfo&quot;: {
-        &quot;aufzug&quot;: &quot;Aufzug&quot;,
-        &quot;info&quot;: &quot;dyn. Fahrgastinformation&quot;,
-        &quot;automat&quot;: &quot;Fahrscheinautomat&quot;,
-        &quot;treppe&quot;: &quot;Fahrtreppe&quot;,
-        &quot;sitzen&quot;: &quot;Sitzgelegenheiten&quot;,
-        &quot;wc&quot;: &quot;WC&quot;
-    },
-    &quot;currentTime&quot;: 1495883148,
-    &quot;currentTimeReal&quot;: 1495883148
-}</code></pre>
-<p>Now I make something more readable out of the json response. With <a href="http://www.newtonsoft.com/json">JSON.net</a> you can deserialize a json string to a .net class. It will try to deserialize as much as possible.</p>
-<p>For my little console program, I only need the <code>stationName</code> from the root object. The line items for the trains contains the <code>departureData</code> array.</p>
-<pre><code>using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace VRRMonitor
-{
-    public class DepartureResponse
-    {
-        public List&lt;DepartureItem&gt; DepartureData { get; set; }
-
-        public string StationName { get; set; }
-    }
-}</code></pre>
-<p>For the <code>DepartureItem</code>, I take the following fields.</p>
-<pre><code>using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace VRRMonitor
-{
-    public class DepartureItem
-    {
-        public string Name { get; set; }
-        public string LineNumber { get; set; }
-        public string SubName { get; set; }
-        public string Direction { get; set; }
-
-        public string Route { get; set; }
-        public MeansOfTransport Type { get; set; } 
-        public int Day { get; set; }
-        public int Month { get; set; }
-        public int Year { get; set; }
-        public int Hour { get; set; }
-        public int Minute { get; set; }
-        public int OrgDay { get; set; }
-        public int OrgMonth { get; set; }
-        public int OrgYear { get; set; }
-        public int OrgHour { get; set; }
-        public int OrgMinute { get; set; }
-        public string Platform { get; set; }
-
-        public int? Delay { get; set; }
-
-  }
-}</code></pre>
-<p>The dates are all send via splitted properties. I put them together within one field.</p>
-<pre><code>public DateTime CurrentDeparture 
-{
-    get
-    {
-        return new DateTime(Year, Month, Day, Hour, Minute, 0);
-    }
-}
-
-public DateTime OriginalDeparture
-{
-    get
-    {
-        return new DateTime(OrgYear, OrgMonth, OrgDay, OrgHour, OrgMinute, 0);
-    }
-}</code></pre>
-<p>The train kind can be casted into an enum. JSON.NET does the the work for you.</p>
-<pre><code>using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace VRRMonitor
-{
-    public enum MeansOfTransport
-    {
-        ICE = 0,
-        Zug = 1,
-        SBahn = 2,
-        UBahn = 3,
-        StrassenBahn = 4,
-        Bus = 5
-    }
-}</code></pre>
-<p>The numbers are not mandatory, but it helps, if you are debugging calls with raw data.</p>
-<p>For a console output, I have to override the <code>ToString()</code> methods of the classes which are used for deserialization. A <code>DepartureItem</code> can be displayed as</p>
-<pre><code>public override string ToString()
-{
-    return $&quot;Aktuell {Hour.ToString(&quot;D2&quot;)}:{Minute.ToString(&quot;D2&quot;)} - Verspätung {Delay ?? 0} - {Name} - Richtung {Direction}&quot;;
-}</code></pre>
-<p>The <code>DepartureResponse</code> has the <code>StationName</code> and additionally the <code>DepartureData</code> items.</p>
-<pre><code>public override string ToString()
-{
-    if (DepartureData == null)
-        return string.Empty;
-
-    var sb = new StringBuilder();
-    sb.AppendLine($&quot;Station name: {StationName}&quot;);
-
-    foreach (var result in DepartureData.Select(x =&gt; x.ToString()))
-        sb.AppendLine(result);
-
-    return sb.ToString();
-}</code></pre>
-<p>A sample output can look like</p>
-<pre><code>$ mono VRRMonitor.exe Wattenscheid
-Station name: Bochum, Wattenscheid Bf
-Aktuell 14:05 - Verspätung 7 - RE1 - Richtung Hamm (Westf)
-Aktuell 14:20 - Verspätung 0 - RE11 - Richtung Paderborn Hbf.
-Aktuell 14:35 - Verspätung 0 - RE6 - Richtung Minden (Westf)
-Aktuell 14:58 - Verspätung 0 - RE1 - Richtung Hamm (Westf)
-Aktuell 15:20 - Verspätung 0 - RE11 - Richtung Hamm (Westf)
-Aktuell 15:35 - Verspätung 0 - RE6 - Richtung Minden (Westf)
-Aktuell 15:58 - Verspätung 0 - RE1 - Richtung Hamm (Westf)
-Aktuell 16:20 - Verspätung 0 - RE11 - Richtung Hamm (Westf)
-Aktuell 16:35 - Verspätung 0 - RE6 - Richtung Minden (Westf)
-Aktuell 16:58 - Verspätung 0 - RE1 - Richtung Hamm (Westf)
-Aktuell 17:20 - Verspätung 0 - RE11 - Richtung Paderborn Hbf.
-Aktuell 17:35 - Verspätung 0 - RE6 - Richtung Minden (Westf)</code></pre>
-<p>If you like the complete working example you can take a look at the <a href="https://github.com/enter-haken/VRRMonitor">code</a>.</p>]]></summary>
+<p>Because I live in North rhine westphalia, I use <a href="http://download.geofabrik.de/europe/germany/nordrhein-westfalen.html">local data</a> from the German <a href="https://www.openstreetmap.org">open street map</a> provider <a href="http://www.geofabrik.de/">geofabrik</a>. At the time of writing the pbf data is about 647 MB in size. This file contains all cities, highways, residential data, rail ways and so on. I only need a fraction of this. The osm community has build a tool called <a href="http://wiki.openstreetmap.org/wiki/Osmosis">osmosis</a> for this. With osmosis you can filter the data and save the result in a XML file.</p>
+<h1 id="cities">Cities</h1>
+<pre><code>$ osmosis --read-pbf nordrhein-westfalen-latest.osm.pbf \
+&gt; --tf accept-nodes place=city,town,village,hamlet,suburb \
+&gt; --tf reject-relations \
+&gt; --tf reject-ways \
+&gt; --write-xml nrw-cities.osm
+Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Osmosis Version 0.40.1
+Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Preparing pipeline.
+Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Launching pipeline execution.
+Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Pipeline executing, waiting for completion.
+Jun 28, 2017 07:44:53 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Pipeline complete.
+Jun 28, 2017 07:44:53 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Total execution time: 44140 milliseconds.</code></pre>
+<p>As a result, you get a 3MB xml file. The file contains all nodes with a <a href="http://wiki.openstreetmap.org/wiki/Key:place">place tag</a>, containing either <code>city</code>, <code>town</code>, <code>village</code>, <code>hamlet</code> or <code>suburb</code>. These tags has usually have a <a href="http://wiki.openstreetmap.org/wiki/Key:name">name tag</a>.</p>
+<p>The city Dortmund looks like</p>
+<pre><code>&lt;node id=&quot;25293125&quot; version=&quot;33&quot; timestamp=&quot;2017-05-08T12:12:08Z&quot; uid=&quot;5706452&quot; user=&quot;Bienson&quot; changeset=&quot;48500235&quot; lat=&quot;51.5142273&quot; lon=&quot;7.4652789&quot;&gt;
+  &lt;tag k=&quot;ele&quot; v=&quot;86&quot;/&gt;
+  &lt;tag k=&quot;is_in&quot; v=&quot;Regierungsbezirk Arnsberg,Nordrhein-Westfalen,Bundesrepublik Deutschland,Europe&quot;/&gt;
+  &lt;tag k=&quot;is_in:country_code&quot; v=&quot;DE&quot;/&gt;
+  &lt;tag k=&quot;is_in:iso_3166_2&quot; v=&quot;DE-NW&quot;/&gt;
+  &lt;tag k=&quot;name&quot; v=&quot;Dortmund&quot;/&gt;
+  &lt;tag k=&quot;name:de&quot; v=&quot;Dortmund&quot;/&gt;
+  &lt;tag k=&quot;name:hu&quot; v=&quot;Dortmund&quot;/&gt;
+  ...
+  &lt;tag k=&quot;openGeoDB:community_identification_number&quot; v=&quot;05913&quot;/&gt;
+  &lt;tag k=&quot;openGeoDB:is_in_loc_id&quot; v=&quot;179&quot;/&gt;
+  &lt;tag k=&quot;openGeoDB:layer&quot; v=&quot;5&quot;/&gt;
+  &lt;tag k=&quot;openGeoDB:license_plate_code&quot; v=&quot;DO&quot;/&gt;
+  &lt;tag k=&quot;openGeoDB:loc_id&quot; v=&quot;404&quot;/&gt;
+  &lt;tag k=&quot;place&quot; v=&quot;city&quot;/&gt;
+  &lt;tag k=&quot;place:importance&quot; v=&quot;2&quot;/&gt;
+  &lt;tag k=&quot;population&quot; v=&quot;600933&quot;/&gt;
+  &lt;tag k=&quot;ref:LOCODE&quot; v=&quot;DEDTM&quot;/&gt;
+  &lt;tag k=&quot;website&quot; v=&quot;http://www.dortmund.de&quot;/&gt;
+  &lt;tag k=&quot;wikidata&quot; v=&quot;Q1295&quot;/&gt;
+  &lt;tag k=&quot;wikipedia&quot; v=&quot;de:Dortmund&quot;/&gt;
+&lt;/node&gt;</code></pre>
+<p>At this point you can decide either to use a xml library for extracting the name tag, or to use the Linux system tools. I start over with the system tools. Let’s look how far we can get.</p>
+<p>A first <code>grep</code> gets every line with a name tag.</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | head
+    &lt;tag k=&quot;name&quot; v=&quot;Dingden&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Bocholt&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Köln&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Herne&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Lünen&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Alstedde&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Heggen&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Herzebrock-Clarholz&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Dortmund&quot;/&gt;
+    &lt;tag k=&quot;name&quot; v=&quot;Schlangen&quot;/&gt;</code></pre>
+<p>Looks promising. With a <code>cut</code> I can extract the values of the tag.</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | cut -d\&quot; -f4 | head
+Dingden
+Bocholt
+Köln
+Herne
+Lünen
+Alstedde
+Heggen
+Herzebrock-Clarholz
+Dortmund
+Schlangen</code></pre>
+<p>At this point, you can get a unique sorted list with</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | cut -d\&quot; -f4 | sort | uniq | head
+Aachen
+Aan de Popelaar
+Aandeschool
+Aarmühle
+Aaseestadt
+Abbenroth
+Abenden
+Abstoß
+Abtsküche
+Achterberg</code></pre>
+<p>As a result we have</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | cut -d\&quot; -f4 | sort | uniq | wc -l
+7725</code></pre>
+<p>unique elements.</p>
+<h1 id="streets">Streets</h1>
+<pre><code>$ osmosis --read-pbf nordrhein-westfalen-latest.osm.pbf \
+&gt; --wkv keyValueList=highway.residential \
+&gt; --tf reject-nodes \
+&gt; --tf reject-relations \
+&gt; --write-xml nrw-streets.osm
+Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Osmosis Version 0.40.1
+Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Preparing pipeline.
+Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Launching pipeline execution.
+Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Pipeline executing, waiting for completion.
+Jun 28, 2017 08:35:11 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Pipeline complete.
+Jun 28, 2017 08:35:11 PM org.openstreetmap.osmosis.core.Osmosis run
+INFORMATION: Total execution time: 66564 milliseconds.</code></pre>
+<p>This result contains only <a href="http://wiki.openstreetmap.org/wiki/Way">way xml nodes</a> containing a <a href="http://wiki.openstreetmap.org/wiki/Key:highway">highway tag</a> with the value <code>residential</code>.</p>
+<pre><code>&lt;way id=&quot;455771&quot; version=&quot;15&quot; timestamp=&quot;2017-03-09T07:41:37Z&quot; uid=&quot;67862&quot; user=&quot;HolgerJeromin&quot; changeset=&quot;46719636&quot;&gt;
+  &lt;nd ref=&quot;290215666&quot;/&gt;
+  &lt;nd ref=&quot;2704621&quot;/&gt;
+  &lt;nd ref=&quot;1256434820&quot;/&gt;
+  &lt;nd ref=&quot;1834309845&quot;/&gt;
+  &lt;nd ref=&quot;2896578753&quot;/&gt;
+  &lt;nd ref=&quot;2704622&quot;/&gt;
+  &lt;nd ref=&quot;2704623&quot;/&gt;
+  &lt;tag k=&quot;highway&quot; v=&quot;living_street&quot;/&gt;
+  &lt;tag k=&quot;lit&quot; v=&quot;yes&quot;/&gt;
+  &lt;tag k=&quot;name&quot; v=&quot;Ernst-Meurin-Straße&quot;/&gt;
+  &lt;tag k=&quot;surface&quot; v=&quot;paving_stones&quot;/&gt;
+&lt;/way&gt;    </code></pre>
+<p>Ways with a name tag are usually urban ways. All other ways will be filtered.</p>
+<p>The names can be extracted on the same way, like it is done with the cities.</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq | head
+55er Straße
+(A7)
+Aabach Aue
+Aabauerschaft
+Aachener Ende
+Aachener Glacis
+Aachener Gracht
+Aachener Platz
+Aachener Straße
+Aachener Weg</code></pre>
+<p>The North rhine westphalia file contains</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq | wc -l
+71787</code></pre>
+<p>unique streets.</p>
+<p>If you want to know, how often a street name is used in North rhine westphalia, you can extend the query like</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | head -n 20
+    749 Bahnhofstraße
+    651 Schulstraße
+    640 Gartenstraße
+    618 Bergstraße
+    574 Kirchstraße
+    493 Bachstraße
+    478 Ringstraße
+    473 Mühlenstraße
+    457 Schillerstraße
+    434 Dorfstraße
+    428 Breslauer Straße
+    408 Goethestraße
+    402 Jahnstraße
+    400 Lindenstraße
+    397 Feldstraße
+    394 Hauptstraße
+    374 Wiesenstraße
+    372 Mühlenweg
+    368 Schützenstraße
+    359 Waldstraße</code></pre>
+<p>This can be useful, if you like to use the top <code>n</code> street names of the whole list.</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | \
+&gt; head -n 20 | sed -e &#39;s/^[[:space:]]*//&#39; | cut -d&#39; &#39; -f2-
+Bahnhofstraße
+Schulstraße
+Gartenstraße
+Bergstraße
+Kirchstraße
+Bachstraße
+Ringstraße
+Mühlenstraße
+Schillerstraße
+Dorfstraße
+Breslauer Straße
+Goethestraße
+Jahnstraße
+Lindenstraße
+Feldstraße
+Hauptstraße
+Wiesenstraße
+Mühlenweg
+Schützenstraße
+Waldstraße</code></pre>
+<p>This is similar to the previous query. First remove leading spaces with <code>sed</code>, then show all content after the first space occurrence with <code>cut</code>. This will reduce the occurrence of false positive matches. With a increasing number of occurrences, the possibility, that the match is a real street name increases.</p>
+<p>If you like to use only those street names, which occurs more than ten times you can query like</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | \
+&gt; uniq -c | sort -rn | sed -e &#39;s/^[[:space:]]*//&#39; | \
+&gt; awk &#39;$1 &gt; 10 { print $0}&#39; | cut -d&#39; &#39; -f2- | wc -l
+3352</code></pre>
+<p>If you need more streets, matching the above requirements, you can take a bigger pbf file. For non German names, just choose an other country.</p>
+<p>The query above for Belgium looks like</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; belgium-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | \ 
+&gt; sed -e &#39;s/^[[:space:]]*//&#39; | awk &#39;$1 &gt; 10 { print $0}&#39; | cut -d&#39; &#39; -f2- | wc -l
+1778</code></pre>
+<p>The top 20 streets for Belgium are</p>
+<pre><code>$ grep &#39;k=&quot;name&quot;&#39; belgium-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | \
+&gt; sed -e &#39;s/^[[:space:]]*//&#39; | awk &#39;$1 &gt; 10 { print $0}&#39; | cut -d&#39; &#39; -f2- | head -n 20
+Kerkstraat
+Molenstraat
+Nieuwstraat
+Schoolstraat
+Stationsstraat
+Kapelstraat
+Veldstraat
+Groenstraat
+Kasteelstraat
+Kloosterstraat
+Broekstraat
+Bosstraat
+Rue du Moulin
+Dorpsstraat
+Rue de l&amp;apos;Église
+Berkenlaan
+Beukenlaan
+Bergstraat
+Lindestraat
+Hoogstraat</code></pre>
+<p>Looks slightly different, right?</p>
+<p>With these flat files you can generate a combination of streets, cities and postal codes. For the postal codes, a random number generator should fit my needs. This will also work for street numbers. With different pbf country files, I can generate localized address test data.</p>]]></summary>
 </entry>
 <entry>
     <title>using pandoc filters to create graphs with hakyll</title>

@@ -22,15 +22,14 @@
             <ul id="list">
     
         <li>
-            <a href="./posts/2017-05-27-vrr.html">querying public transport data</a> - May 27, 2017
+            <a href="./posts/2017-06-28-testdata.html">providing test data for databases</a> - June 28, 2017
             
             <p>
-                <p>Last month a ICE derailed before entering the Dortmund main station. This got my timetable mixed up. Trains did not drive towards Dortmund from the west for weeks. The timetable got kind of useless for a while.</p>
-<p>In the morning, I could ride from Dortmund to Wattenscheid, in the evening I had to ride via Gelsenkirchen to Dortmund. Some trains could pass Dortmund coming from Gelsenkirchen, others didn’t. Every day, I checked my train on a <a href="http://abfahrtsmonitor.vrr.de">electronic departure monitor</a>. It showed, which train, including the delay passes a certain train station. For me it was enough information, because I does not have to change trains on my way to work.</p>
-<p>The site was ok, but I needed something more convenient. Something I could call from command line, so I take a further look.</p>
+                <p>A few days ago, I did some experiments with PostgreSQL JSONB columns. A used a simple person model for my tests, containing address data for a person.</p>
+<p>For my tests, I needed some test data. I could have generated some random strings, but I wanted to fill the database with more realistic data. I have often thought of a test data generator for commonly used data models. If you want to generate randomized addresses for a person, you need a big list of street names and city names. When it comes to geographical data like this, <a href="https://www.openstreetmap.org">open street maps</a> comes into the game.</p>
 
             </p>
-            <a href="./posts/2017-05-27-vrr.html">more</a>
+            <a href="./posts/2017-06-28-testdata.html">more</a>
             
         </li>
     

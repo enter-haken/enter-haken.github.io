@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>enter_haken - Automatically update MIT licenses</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="navigation">
+                <a href="../">enter_haken</a>
+                <a href="../projects.html">projects</a>
+                <a href="../cookbook.html">cookbook</a>
+                <a href="../notes.html">notes</a>
+                <a href="../read.html">read</a>
+                <a href="../about.html">about</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>Automatically update MIT licenses</h1>
+
+<div class="info">
+    
+    Posted on July  7, 2017
+    
+        
+</div>
+
+<p>When you are using the MIT license for your own project, you can add copyright notices to the license. The license starts with</p>
+<pre><code>The MIT License (MIT)
+Copyright (c) 2016 Jan Frederik Hake
+
+Permission is hereby granted, free of charge, ...</code></pre>
+<p>For every year, you make changes to the source, you have to add the year to the copyright notice. Especially for projects, which are rarely updated, the license is often forgotten.</p>
+<p>With some git and awk magic, this task can be automated. <!--more--></p>
+<h1 id="git-log">git log</h1>
+<p>I take my blog sources as an example. The source for my changes is my git log.</p>
+<p>If I like to see only the commit date and the name of the committer you can start with</p>
+<pre><code>$ git log --pretty=format:&quot;%ad|%an&quot; | head -n5
+Wed Jun 28 19:00:52 2017 +0200|Jan Frederik Hake
+Sat May 6 10:38:58 2017 +0200|Jan Frederik Hake
+Sat May 6 10:29:15 2017 +0200|Jan Frederik Hake
+Sat May 6 07:53:10 2017 +0200|Jan Frederik Hake
+Thu May 4 11:57:25 2017 +0200|Jan Frederik Hake</code></pre>
+<p>I choose the pipe character as a separator for further processing. The date can be formatted with the <code>--date</code> parameter.</p>
+<pre><code>$ git log --pretty=format:&quot;%ad|%an&quot; --date=format:%Y | head -n 5
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake</code></pre>
+<p>In the next step I do some <code>uniq</code> and <code>sort</code> on the result. For the next process step, I switch the year and the name.</p>
+<pre><code>$ git log --pretty=format:&quot;%an|%ad&quot; --date=format:%Y | sort | uniq | \
+&gt; awk 'BEGIN {FS=&quot;|&quot;}                       \
+&gt; {                                         \ 
+&gt;   if ($1==prev) {                         \
+&gt;           sec=sec &quot;,&quot; $2;                 \
+&gt;   }                                       \
+&gt;   else {                                  \
+&gt;       if (prev) {                         \
+&gt;           print &quot;(c) &quot; sec &quot; &quot; prev;      \
+&gt;       };                                  \
+&gt;       prev=$1;                            \
+&gt;       sec=$2;                             \
+&gt;   }                                       \
+&gt; }                                         \
+&gt; END {                                     \
+&gt;     if (prev) {                           \
+&gt;         print &quot;(c) &quot; sec &quot; &quot; prev;        \
+&gt;     }                                     \
+&gt; }'
+(c) 2016,2017 Jan Frederik Hake </code></pre>
+<p>With a simple bash script you can update your LICENSE file of your project, if needed.</p>
+<pre><code>#!/bin/sh
+if [ ! -f LICENSE ]; then
+    break; 
+fi
+
+copyright=$(git log --pretty=format:&quot;%an|%ad&quot; \
+            --date=format:%Y | sort | uniq |  \
+    awk 'BEGIN {FS=&quot;|&quot;}                       \
+    {                                         \
+      if ($1==prev) {                         \
+              sec=sec &quot;,&quot; $2;                 \
+      }                                       \
+      else {                                  \
+          if (prev) {                         \
+              print &quot;(c) &quot; sec &quot; &quot; prev;      \
+          };                                  \
+          prev=$1;                            \
+          sec=$2;                             \
+      }                                       \
+    }                                         \
+    END {                                     \
+        if (prev) {                           \
+            print &quot;(c) &quot; sec &quot; &quot; prev;        \
+        }                                     \
+    }')
+
+license=$(cat LICENSE | sed -e &quot;s/(c).*$/$copyright/g&quot;)
+echo &quot;$license&quot; &gt; LICENSE</code></pre>
+<p>If you add the script to the project Makefile, there is no need for manually updating the LICENSE file any more.</p>
+
+        </div>
+        <div id="footer">
+            Copyright &copy; 2016 - 2017 by Jan Frederik Hake | 
+            <a href="https://enter-haken.github.io/atom.xml">atom feed</a> | 
+            generated by <a href="http://jaspervdj.be/hakyll">Hakyll</a> | 
+            <a href="https://github.com/enter-haken/blog">blog source</a>
+        </div>
+    </body>
+</html>

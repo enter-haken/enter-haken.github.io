@@ -8,8 +8,89 @@
         <name>Jan Frederik Hake</name>
         <email>jan_hake@gmx.de</email>
     </author>
-    <updated>2017-07-06T00:00:00Z</updated>
+    <updated>2017-07-07T00:00:00Z</updated>
     <entry>
+    <title>Automatically update MIT licenses</title>
+    <link href="https://enter-haken.github.io/posts/2017-07-07-update-mit-license.html" />
+    <id>https://enter-haken.github.io/posts/2017-07-07-update-mit-license.html</id>
+    <published>2017-07-07T00:00:00Z</published>
+    <updated>2017-07-07T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>When you are using the MIT license for your own project, you can add copyright notices to the license. The license starts with</p>
+<pre><code>The MIT License (MIT)
+Copyright (c) 2016 Jan Frederik Hake
+
+Permission is hereby granted, free of charge, ...</code></pre>
+<p>For every year, you make changes to the source, you have to add the year to the copyright notice. Especially for projects, which are rarely updated, the license is often forgotten.</p>
+<p>With some git and awk magic, this task can be automated. <!--more--></p>
+<h1 id="git-log">git log</h1>
+<p>I take my blog sources as an example. The source for my changes is my git log.</p>
+<p>If I like to see only the commit date and the name of the committer you can start with</p>
+<pre><code>$ git log --pretty=format:&quot;%ad|%an&quot; | head -n5
+Wed Jun 28 19:00:52 2017 +0200|Jan Frederik Hake
+Sat May 6 10:38:58 2017 +0200|Jan Frederik Hake
+Sat May 6 10:29:15 2017 +0200|Jan Frederik Hake
+Sat May 6 07:53:10 2017 +0200|Jan Frederik Hake
+Thu May 4 11:57:25 2017 +0200|Jan Frederik Hake</code></pre>
+<p>I choose the pipe character as a separator for further processing. The date can be formatted with the <code>--date</code> parameter.</p>
+<pre><code>$ git log --pretty=format:&quot;%ad|%an&quot; --date=format:%Y | head -n 5
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake
+2017|Jan Frederik Hake</code></pre>
+<p>In the next step I do some <code>uniq</code> and <code>sort</code> on the result. For the next process step, I switch the year and the name.</p>
+<pre><code>$ git log --pretty=format:&quot;%an|%ad&quot; --date=format:%Y | sort | uniq | \
+&gt; awk &#39;BEGIN {FS=&quot;|&quot;}                       \
+&gt; {                                         \ 
+&gt;   if ($1==prev) {                         \
+&gt;           sec=sec &quot;,&quot; $2;                 \
+&gt;   }                                       \
+&gt;   else {                                  \
+&gt;       if (prev) {                         \
+&gt;           print &quot;(c) &quot; sec &quot; &quot; prev;      \
+&gt;       };                                  \
+&gt;       prev=$1;                            \
+&gt;       sec=$2;                             \
+&gt;   }                                       \
+&gt; }                                         \
+&gt; END {                                     \
+&gt;     if (prev) {                           \
+&gt;         print &quot;(c) &quot; sec &quot; &quot; prev;        \
+&gt;     }                                     \
+&gt; }&#39;
+(c) 2016,2017 Jan Frederik Hake </code></pre>
+<p>With a simple bash script you can update your LICENSE file of your project, if needed.</p>
+<pre><code>#!/bin/sh
+if [ ! -f LICENSE ]; then
+    break; 
+fi
+
+copyright=$(git log --pretty=format:&quot;%an|%ad&quot; \
+            --date=format:%Y | sort | uniq |  \
+    awk &#39;BEGIN {FS=&quot;|&quot;}                       \
+    {                                         \
+      if ($1==prev) {                         \
+              sec=sec &quot;,&quot; $2;                 \
+      }                                       \
+      else {                                  \
+          if (prev) {                         \
+              print &quot;(c) &quot; sec &quot; &quot; prev;      \
+          };                                  \
+          prev=$1;                            \
+          sec=$2;                             \
+      }                                       \
+    }                                         \
+    END {                                     \
+        if (prev) {                           \
+            print &quot;(c) &quot; sec &quot; &quot; prev;        \
+        }                                     \
+    }&#39;)
+
+license=$(cat LICENSE | sed -e &quot;s/(c).*$/$copyright/g&quot;)
+echo &quot;$license&quot; &gt; LICENSE</code></pre>
+<p>If you add the script to the project Makefile, there is no need for manually updating the LICENSE file any more.</p>]]></summary>
+</entry>
+<entry>
     <title>Moving ORM Mapping towards the database</title>
     <link href="https://enter-haken.github.io/posts/2017-07-06-database-architecture.html" />
     <id>https://enter-haken.github.io/posts/2017-07-06-database-architecture.html</id>
@@ -1027,27 +1108,6 @@ done</code></pre>
 <li><a href="http://henrikwarne.com/2014/06/30/what-makes-a-good-programmer/">what makes a good programmer</a></li>
 <li><a href="https://en.wikipedia.org/wiki/No_Silver_Bullet">there is no silver bullet</a></li>
 </ul>]]></summary>
-</entry>
-<entry>
-    <title>Git Cleanup</title>
-    <link href="https://enter-haken.github.io/posts/2016-02-27-cleanup-git.html" />
-    <id>https://enter-haken.github.io/posts/2016-02-27-cleanup-git.html</id>
-    <published>2016-02-27T00:00:00Z</published>
-    <updated>2016-02-27T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>After working over months with several developers on one repository, a little bit “tree care” is necessary. Usually old merged branches are deleted on server, when they are not needed any more.</p>
-<!--more-->
-<pre><code>for branch in `git branch -r --merged master`;
-do
-    comitter=`git show --format=&quot;%an&quot; $branch | head -n 1;`
-    if [ &quot;$comitter&quot; = &quot;$1&quot; ]; then
-        echo -e &quot;$branch&quot;
-    fi
-done</code></pre>
-<p>Feature branches can be found like:</p>
-<pre><code>./myBranches.sh &quot;Jan Frederik Hake&quot; | grep feature</code></pre>
-<p>If you cut of the remote prefix a call to</p>
-<pre><code>./myBranches.sh &quot;Jan Frederik Hake&quot; | grep feature | cut -d &#39;/&#39; -f 2,3 | xargs git push origin --delete</code></pre>
-<p>deletes the merged branches from a remote repository.</p>]]></summary>
 </entry>
 
 </feed>

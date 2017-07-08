@@ -52,25 +52,26 @@ Thu May 4 11:57:25 2017 +0200|Jan Frederik Hake</code></pre>
 2017|Jan Frederik Hake
 2017|Jan Frederik Hake</code></pre>
 <p>In the next step I do some <code>uniq</code> and <code>sort</code> on the result. For the next process step, I switch the year and the name.</p>
-<pre><code>$ git log --pretty=format:&quot;%an|%ad&quot; --date=format:%Y | sort | uniq | \
-&gt; awk 'BEGIN {FS=&quot;|&quot;}                       \
-&gt; {                                         \ 
-&gt;   if ($1==prev) {                         \
-&gt;           sec=sec &quot;,&quot; $2;                 \
-&gt;   }                                       \
-&gt;   else {                                  \
-&gt;       if (prev) {                         \
-&gt;           print &quot;(c) &quot; sec &quot; &quot; prev;      \
-&gt;       };                                  \
-&gt;       prev=$1;                            \
-&gt;       sec=$2;                             \
-&gt;   }                                       \
-&gt; }                                         \
-&gt; END {                                     \
-&gt;     if (prev) {                           \
-&gt;         print &quot;(c) &quot; sec &quot; &quot; prev;        \
-&gt;     }                                     \
-&gt; }'
+<pre><code>$ git log --pretty=format:&quot;%an|%ad&quot;                  \
+&gt;            --date=format:%Y | sort | uniq |        \
+&gt;    awk 'BEGIN {FS=&quot;|&quot;}                             \
+&gt;    {                                               \
+&gt;      if ($1==currentName) {                        \
+&gt;              year=year &quot;,&quot; $2;                     \
+&gt;      }                                             \
+&gt;      else {                                        \
+&gt;          if (currentName) {                        \
+&gt;              print &quot;(c) &quot; year &quot; &quot; currentName;    \
+&gt;          };                                        \
+&gt;          currentName=$1;                           \
+&gt;          year=$2;                                  \
+&gt;      }                                             \
+&gt;    }                                               \
+&gt;    END {                                           \
+&gt;        if (currentName) {                          \
+&gt;            print &quot;(c) &quot; year &quot; &quot; currentName;      \
+&gt;        }                                           \
+&gt;    }' 
 (c) 2016,2017 Jan Frederik Hake </code></pre>
 <p>With a simple bash script you can update your LICENSE file of your project, if needed.</p>
 <pre><code>#!/bin/sh
@@ -78,25 +79,25 @@ if [ ! -f LICENSE ]; then
     break; 
 fi
 
-copyright=$(git log --pretty=format:&quot;%an|%ad&quot; \
-            --date=format:%Y | sort | uniq |  \
-    awk 'BEGIN {FS=&quot;|&quot;}                       \
-    {                                         \
-      if ($1==prev) {                         \
-              sec=sec &quot;,&quot; $2;                 \
-      }                                       \
-      else {                                  \
-          if (prev) {                         \
-              print &quot;(c) &quot; sec &quot; &quot; prev;      \
-          };                                  \
-          prev=$1;                            \
-          sec=$2;                             \
-      }                                       \
-    }                                         \
-    END {                                     \
-        if (prev) {                           \
-            print &quot;(c) &quot; sec &quot; &quot; prev;        \
-        }                                     \
+copyright=$(git log --pretty=format:&quot;%an|%ad&quot;       \
+            --date=format:%Y | sort | uniq |        \
+    awk 'BEGIN {FS=&quot;|&quot;}                             \
+    {                                               \
+      if ($1==currentName) {                        \
+              year=year &quot;,&quot; $2;                     \
+      }                                             \
+      else {                                        \
+          if (currentName) {                        \
+              print &quot;(c) &quot; year &quot; &quot; currentName;    \
+          };                                        \
+          currentName=$1;                           \
+          year=$2;                                  \
+      }                                             \
+    }                                               \
+    END {                                           \
+        if (currentName) {                          \
+            print &quot;(c) &quot; year &quot; &quot; currentName;      \
+        }                                           \
     }')
 
 license=$(cat LICENSE | sed -e &quot;s/(c).*$/$copyright/g&quot;)

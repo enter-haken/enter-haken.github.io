@@ -8,8 +8,606 @@
         <name>Jan Frederik Hake</name>
         <email>jan_hake@gmx.de</email>
     </author>
-    <updated>2017-07-07T00:00:00Z</updated>
+    <updated>2017-07-15T00:00:00Z</updated>
     <entry>
+    <title>Working with immutable data in Postgres</title>
+    <link href="https://enter-haken.github.io/posts/2017-07-15-database-architecture-part2.html" />
+    <id>https://enter-haken.github.io/posts/2017-07-15-database-architecture-part2.html</id>
+    <published>2017-07-15T00:00:00Z</published>
+    <updated>2017-07-15T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>After taking a <a href="/posts/2017-07-06-database-architecture.html">first look</a> at the JSON columns, let’s look at a few possible applications. Imagine a simple shop system with articles, prices and purchase orders.</p>
+<p>An article can be <code>active</code> or <code>inactive</code>.</p>
+<pre><code>CREATE TYPE article_status AS ENUM (
+    &#39;active&#39;,
+    &#39;inactive&#39;
+);</code></pre>
+<p>Every article has an <code>article_number</code>.</p>
+<pre><code>CREATE TABLE article (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    article_number VARCHAR(128) UNIQE NOT NULL DEFAULT &#39;&#39;,
+    name VARCHAR(128),
+    description VARCHAR(2048),
+    status article_status NOT NULL DEFAULT &#39;active&#39;
+);</code></pre>
+<p>You can see that <code>id</code> and <code>article_number</code> are unique, so both could be used as a primary key. This is not normalized in a usual way.</p>
+<p>There are a few points, why to stick to this solution.</p>
+<!--more-->
+<ul>
+<li>A primary key should only be used to identify a record. Not more, not less.</li>
+<li>There must be no reuse for a business case, like it would be for <code>article_number</code>. The <code>article_number</code> could not be changed so easily, after being promoted to a primary key.</li>
+<li>A <code>article_number</code> identifies an article entity not a database record.</li>
+</ul>
+<h1 id="prices-with-history">prices with history</h1>
+<p>Every <code>article</code> can have a price.</p>
+<pre><code>CREATE TABLE price (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_article UUID NOT NULL REFERENCES article(id),
+    price real NOT NULL DEFAULT 0.0,
+    scale_lower_limit INT NOT NULL DEFAULT 1,
+    scale_upper_limit INT NOT NULL DEFAULT 2147483647,
+    valid_from DATE NOT NULL DEFAULT current_date,
+    valid_to DATE NOT NULL DEFAULT current_date + interval &#39;1 year&#39;
+);</code></pre>
+<p>An <code>article</code> can have multiple prices over time. There can be multiple price scales. A <code>price</code> will be more likely changed than an <code>article</code>. Price changes may be interesting for reporting issues.</p>
+<p>You can store these changes in a JSONB column.</p>
+<pre><code>ALTER TABLE price ADD COLUMN history JSONB;</code></pre>
+<p>Every time, a price record changes. these changes should be saved. These saved items should be immutable over time.</p>
+<pre><code>CREATE FUNCTION history_trigger() RETURNS TRIGGER AS $$.
+
+BEGIN
+    IF NEW.history IS NULL THEN
+        NEW.history := &#39;[]&#39;::JSONB;
+    END IF;
+
+    NEW.history := NEW.history::JSONB || (row_to_json(OLD)::JSONB - &#39;history&#39;);
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER price_history_trigger BEFORE UPDATE ON price
+    FOR EACH ROW EXECUTE PROCEDURE history_trigger();</code></pre>
+<p>First of all, an <code>article</code> has to be created.</p>
+<pre><code>$ psql -U postgres -c &quot;INSERT INTO test.article (article_number, name, description) \
+&gt; VALUES (&#39;AB12345&#39;, &#39;Test article&#39;,&#39;Test desc&#39;)&quot;
+INSERT 0 1</code></pre>
+<p>For this newly inserted article</p>
+<pre><code>$ psql -U postgres -c &quot;SELECT * from test.article&quot; | cat
+                  id                  | article_number |     name     | description | status |         created_at         |         updated_at         
+--------------------------------------+----------------+--------------+-------------+--------+----------------------------+----------------------------
+ f12def37-3de6-4985-8912-054891631499 | AB12345        | Test article | Test desc   | active | 2017-07-15 19:17:14.727931 | 2017-07-15 19:17:14.727931
+(1 row)</code></pre>
+<p>you can add a <code>price</code>,</p>
+<pre><code>$ psql -U postgres -c &quot;INSERT INTO test.price (id_article, price) \
+&gt; VALUES (&#39;f12def37-3de6-4985-8912-054891631499&#39;,50.5)&quot;
+INSERT 0 1
+
+$ psql -U postgres -c &quot;SELECT * FROM test.price&quot; | cat
+                  id                  |              id_article              | price | scale_lower_limit | scale_upper_limit | valid_from |  valid_to  | history |         created_at         |         updated_at         
+--------------------------------------+--------------------------------------+-------+-------------------+-------------------+------------+------------+---------+----------------------------+----------------------------
+ 3a113796-05fd-4ff3-a33f-b08f92c01cd8 | f12def37-3de6-4985-8912-054891631499 |  50.5 |                 1 |        2147483647 | 2017-07-15 | 2018-07-15 |         | 2017-07-15 19:21:39.245331 | 2017-07-15 19:21:39.245331
+(1 row)</code></pre>
+<p>and raise the price value for the <code>price</code> record.</p>
+<pre><code>$ psql -U postgres -c &quot;UPDATE test.price SET price = 70.2 WHERE id = &#39;3a113796-05fd-4ff3-a33f-b08f92c01cd8&#39;&quot;
+UPDATE 1
+
+$ psql -U postgres -c &quot;SELECT * FROM test.price&quot; | cat
+                  id                  |              id_article              | price | scale_lower_limit | scale_upper_limit | valid_from |  valid_to  |                                                                                                                                                           history                                                                                                                                                            |         created_at         |         updated_at
+--------------------------------------+--------------------------------------+-------+-------------------+-------------------+------------+------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+----------------------------
+ 3a113796-05fd-4ff3-a33f-b08f92c01cd8 | f12def37-3de6-4985-8912-054891631499 |  70.2 |                 1 |        2147483647 | 2017-07-15 | 2018-07-15 | [{&quot;id&quot;: &quot;3a113796-05fd-4ff3-a33f-b08f92c01cd8&quot;, &quot;price&quot;: 50.5, &quot;valid_to&quot;: &quot;2018-07-15&quot;, &quot;created_at&quot;: &quot;2017-07-15T19:21:39.245331&quot;, &quot;id_article&quot;: &quot;f12def37-3de6-4985-8912-054891631499&quot;, &quot;updated_at&quot;: &quot;2017-07-15T19:21:39.245331&quot;, &quot;valid_from&quot;: &quot;2017-07-15&quot;, &quot;scale_lower_limit&quot;: 1, &quot;scale_upper_limit&quot;: 2147483647}] | 2017-07-15 19:21:39.245331 | 2017-07-15 19:25:04.672829
+(1 row)</code></pre>
+<p>The <code>history</code> is updated every time, a <code>price</code> record is updated.</p>
+<h1 id="customer">customer</h1>
+<p>A <code>customer</code> is a kind of <code>person</code> which has a <code>customer_number</code></p>
+<pre><code>CREATE TABLE customer (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_person UUID NOT NULL REFERENCES person(id),
+    customer_number VARCHAR(128) NOT NULL DEFAULT &#39;&#39;,
+    json_view JSONB
+);</code></pre>
+<p>As you can see, a <code>json_view</code> column is added to the <code>customer</code>. The only difference between a <code>person</code> and a customer is the <code>customer_number</code>.</p>
+<p>Analog to the <code>persons</code> <a href="/posts/2017-07-06-database-architecture.html#json-column">update function</a> we can write an update function for a <code>customer</code></p>
+<pre><code>CREATE FUNCTION update_json_view_customer(id_customer UUID) RETURNS VOID AS $$
+DECLARE
+    customer_raw JSONB;
+    person_id UUID;
+BEGIN
+
+    IF NOT EXISTS (SELECT 1 FROM person p 
+        JOIN customer c on p.id = c.id_person 
+        WHERE p.json_view IS NOT NULL AND c.id = id_customer) THEN
+
+        SELECT id_person FROM customer WHERE id = id_customer INTO person_id;
+
+        RAISE NOTICE &#39;update json_view for person %&#39;, person_id;
+
+        perform update_json_view_person(person_id);
+    END IF;
+
+    SELECT row_to_json(c) FROM 
+        (SELECT c.id, customer_number, p.json_view AS person_json_view FROM customer c
+            JOIN person p on c.id_person = p.id
+            WHERE c.id = id_customer LIMIT 1) c INTO customer_raw;
+
+    customer_raw := customer_raw || jsonb_build_object(&#39;person&#39;, customer_raw-&gt;&#39;person_json_view&#39;);
+    customer_raw := customer_raw - &#39;person_json_view&#39;;
+
+    UPDATE customer SET json_view = customer_raw WHERE id = id_customer;
+END
+$$ LANGUAGE plpgsql;</code></pre>
+<p>The <code>json_view</code> of the <code>person</code> is reused.</p>
+<p>Let’s take a inserted person.</p>
+<pre><code>$ psql -U postgres -c &quot;SELECT id FROM test.person&quot;
+                  id
+--------------------------------------
+ da44de2f-aa0a-43c5-9fed-dcbb5b6c32a2
+(1 row)</code></pre>
+<p>and insert a new <code>customer</code> for this <code>person</code>.</p>
+<pre><code>$ psql -U postgres -c &quot;INSERT INTO test.customer (customer_number, id_person) \
+VALUES (&#39;AB12345&#39;, &#39;da44de2f-aa0a-43c5-9fed-dcbb5b6c32a2&#39;);&quot;
+INSERT 0 1</code></pre>
+<p>The newly inserted <code>customer</code> looks like</p>
+<pre><code>$ psql -U postgres -c &quot;SELECT * FROM test.customer&quot; | cat
+                  id                  |              id_person               | customer_number | json_view |         created_at         |         updated_at         
+--------------------------------------+--------------------------------------+-----------------+-----------+----------------------------+----------------------------
+ 88a99ea7-4281-496b-9c95-3625101177ca | da44de2f-aa0a-43c5-9fed-dcbb5b6c32a2 | AB12345         |           | 2017-07-15 18:41:27.811324 | 2017-07-15 18:41:27.811324
+(1 row)</code></pre>
+<p>Now the <code>customer</code>’s <code>json_view</code> must be filled.</p>
+<pre><code>$ psql -U postgres -c &quot;SET search_path TO test,public; \
+&gt;  SELECT test.update_json_view_customer(&#39;88a99ea7-4281-496b-9c95-3625101177ca&#39;);&quot;
+ update_json_view_customer 
+---------------------------
+  
+(1 row)
+
+$ psql -U postgres -c &quot;SELECT * FROM test.customer&quot; | cat
+                  id                  |              id_person               | customer_number |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              json_view                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |         created_at         |         updated_at         
+--------------------------------------+--------------------------------------+-----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+----------------------------
+ 88a99ea7-4281-496b-9c95-3625101177ca | da44de2f-aa0a-43c5-9fed-dcbb5b6c32a2 | AB12345         | {&quot;id&quot;: &quot;88a99ea7-4281-496b-9c95-3625101177ca&quot;, &quot;person&quot;: {&quot;id&quot;: &quot;da44de2f-aa0a-43c5-9fed-dcbb5b6c32a2&quot;, &quot;notes&quot;: null, &quot;website&quot;: null, &quot;addresses&quot;: [{&quot;id&quot;: &quot;9a78ceb0-5169-4bca-bbf5-aac54fcaa95a&quot;, &quot;city&quot;: &quot;Dortmund&quot;, &quot;street&quot;: &quot;Fakestreet&quot;, &quot;postal_code&quot;: &quot;44339&quot;, &quot;address_type&quot;: &quot;private&quot;, &quot;street_number&quot;: &quot;123&quot;}, {&quot;id&quot;: &quot;c69ec275-0a05-42ce-80ea-1ea1b5bcbd78&quot;, &quot;city&quot;: &quot;Bochum&quot;, &quot;street&quot;: &quot;Fakeroad&quot;, &quot;postal_code&quot;: &quot;44866&quot;, &quot;address_type&quot;: &quot;work&quot;, &quot;street_number&quot;: &quot;321&quot;}], &quot;last_name&quot;: &quot;Hake&quot;, &quot;birth_date&quot;: null, &quot;first_name&quot;: &quot;Jan Frederik&quot;, &quot;phone_numbers&quot;: [{&quot;id&quot;: &quot;0df74379-6512-4f54-a1a7-fee1c1605342&quot;, &quot;phone_number&quot;: &quot;+49231123456789&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;landline&quot;, &quot;is_primary_phone_number&quot;: true}, {&quot;id&quot;: &quot;a9d36784-7af3-47e8-b357-2f03500f7d66&quot;, &quot;phone_number&quot;: &quot;+49151123456789&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;cellular_network&quot;, &quot;is_primary_phone_number&quot;: false}], &quot;email_addresses&quot;: [{&quot;id&quot;: &quot;ff2fee9e-490f-49b2-8e0e-69d5bddd2ca0&quot;, &quot;email_address&quot;: &quot;jan_hake@fake.de&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;is_primary_email_address&quot;: false}]}, &quot;customer_number&quot;: &quot;AB12345&quot;} | 2017-07-15 18:41:27.811324 | 2017-07-15 18:50:47.591534
+(1 row)</code></pre>
+<p>a little bit more beautifull</p>
+<pre><code>{
+    &quot;id&quot;: &quot;88a99ea7-4281-496b-9c95-3625101177ca&quot;,
+    &quot;person&quot;: {
+        &quot;id&quot;: &quot;da44de2f-aa0a-43c5-9fed-dcbb5b6c32a2&quot;,
+        &quot;notes&quot;: null,
+        &quot;website&quot;: null,
+        &quot;addresses&quot;: [{
+            &quot;id&quot;: &quot;9a78ceb0-5169-4bca-bbf5-aac54fcaa95a&quot;,
+            &quot;city&quot;: &quot;Dortmund&quot;,
+            &quot;street&quot;: &quot;Fakestreet&quot;,
+            &quot;postal_code&quot;: &quot;44339&quot;,
+            &quot;address_type&quot;: &quot;private&quot;,
+            &quot;street_number&quot;: &quot;123&quot;
+        }, {
+            &quot;id&quot;: &quot;c69ec275-0a05-42ce-80ea-1ea1b5bcbd78&quot;,
+            &quot;city&quot;: &quot;Bochum&quot;,
+            &quot;street&quot;: &quot;Fakeroad&quot;,
+            &quot;postal_code&quot;: &quot;44866&quot;,
+            &quot;address_type&quot;: &quot;work&quot;,
+            &quot;street_number&quot;: &quot;321&quot;
+        }],
+        &quot;last_name&quot;: &quot;Hake&quot;,
+        &quot;birth_date&quot;: null,
+        &quot;first_name&quot;: &quot;Jan Frederik&quot;,
+        &quot;phone_numbers&quot;: [{
+            &quot;id&quot;: &quot;0df74379-6512-4f54-a1a7-fee1c1605342&quot;,
+            &quot;phone_number&quot;: &quot;+49231123456789&quot;,
+            &quot;communication_type&quot;: &quot;private&quot;,
+            &quot;communication_network&quot;: &quot;landline&quot;,
+            &quot;is_primary_phone_number&quot;: true
+        }, {
+            &quot;id&quot;: &quot;a9d36784-7af3-47e8-b357-2f03500f7d66&quot;,
+            &quot;phone_number&quot;: &quot;+49151123456789&quot;,
+            &quot;communication_type&quot;: &quot;private&quot;,
+            &quot;communication_network&quot;: &quot;cellular_network&quot;,
+            &quot;is_primary_phone_number&quot;: false
+        }],
+        &quot;email_addresses&quot;: [{
+            &quot;id&quot;: &quot;ff2fee9e-490f-49b2-8e0e-69d5bddd2ca0&quot;,
+            &quot;email_address&quot;: &quot;jan_hake@fake.de&quot;,
+            &quot;communication_type&quot;: &quot;private&quot;,
+            &quot;is_primary_email_address&quot;: false
+        }]
+    },
+    &quot;customer_number&quot;: &quot;AB12345&quot;
+}</code></pre>
+<h1 id="a-purchase-process">a purchase process</h1>
+<p>Now we have a <code>customer</code> and <code>articles</code> with <code>prices</code>. The next step is to buy something. But first we take a look at a common workflow, when you buy something in a shop.</p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="883pt" height="194pt"
+ viewBox="0.00 0.00 883.05 194.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 190)">
+<title>%3</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-190 879.048,-190 879.048,4 -4,4"/>
+<g id="clust1" class="cluster"><title>cluster_0</title>
+<polygon fill="lightgrey" stroke="lightgrey" points="108.048,-8 108.048,-178 343.048,-178 343.048,-8 108.048,-8"/>
+<text text-anchor="middle" x="225.548" y="-162.8" font-family="Helvetica,sans-Serif" font-size="14.00">mutable</text>
+<text text-anchor="middle" x="225.548" y="-147.8" font-family="Helvetica,sans-Serif" font-size="14.00">data</text>
+</g>
+<g id="clust2" class="cluster"><title>cluster_1</title>
+<polygon fill="lightgrey" stroke="lightgrey" points="419.048,-53 419.048,-145 807.048,-145 807.048,-53 419.048,-53"/>
+<text text-anchor="middle" x="613.048" y="-129.8" font-family="Helvetica,sans-Serif" font-size="14.00">immutable</text>
+<text text-anchor="middle" x="613.048" y="-114.8" font-family="Helvetica,sans-Serif" font-size="14.00">data</text>
+</g>
+<!-- po -->
+<g id="node1" class="node"><title>po</title>
+<path fill="white" stroke="white" d="M176.048,-110C176.048,-110 128.048,-110 128.048,-110 122.048,-110 116.048,-104 116.048,-98 116.048,-98 116.048,-84 116.048,-84 116.048,-78 122.048,-72 128.048,-72 128.048,-72 176.048,-72 176.048,-72 182.048,-72 188.048,-78 188.048,-84 188.048,-84 188.048,-98 188.048,-98 188.048,-104 182.048,-110 176.048,-110"/>
+<text text-anchor="middle" x="152.048" y="-94.8" font-family="Helvetica,sans-Serif" font-size="14.00">purchase</text>
+<text text-anchor="middle" x="152.048" y="-79.8" font-family="Helvetica,sans-Serif" font-size="14.00">order</text>
+</g>
+<!-- rts -->
+<g id="node2" class="node"><title>rts</title>
+<path fill="white" stroke="white" d="M323.048,-132C323.048,-132 282.048,-132 282.048,-132 276.048,-132 270.048,-126 270.048,-120 270.048,-120 270.048,-106 270.048,-106 270.048,-100 276.048,-94 282.048,-94 282.048,-94 323.048,-94 323.048,-94 329.048,-94 335.048,-100 335.048,-106 335.048,-106 335.048,-120 335.048,-120 335.048,-126 329.048,-132 323.048,-132"/>
+<text text-anchor="middle" x="302.548" y="-116.8" font-family="Helvetica,sans-Serif" font-size="14.00">ready to</text>
+<text text-anchor="middle" x="302.548" y="-101.8" font-family="Helvetica,sans-Serif" font-size="14.00">send</text>
+</g>
+<!-- po&#45;&gt;rts -->
+<g id="edge1" class="edge"><title>po&#45;&gt;rts</title>
+<path fill="none" stroke="black" d="M175.557,-110.06C184.466,-116.429 195.17,-122.733 206.048,-126 223.167,-131.143 242.629,-129.729 259.497,-126.336"/>
+<polygon fill="black" stroke="black" points="260.659,-129.661 269.62,-124.009 259.09,-122.839 260.659,-129.661"/>
+</g>
+<!-- item -->
+<g id="node3" class="node"><title>item</title>
+<path fill="white" stroke="white" d="M317.548,-71C317.548,-71 287.548,-71 287.548,-71 281.548,-71 275.548,-65 275.548,-59 275.548,-59 275.548,-47 275.548,-47 275.548,-41 281.548,-35 287.548,-35 287.548,-35 317.548,-35 317.548,-35 323.548,-35 329.548,-41 329.548,-47 329.548,-47 329.548,-59 329.548,-59 329.548,-65 323.548,-71 317.548,-71"/>
+<text text-anchor="middle" x="302.548" y="-49.3" font-family="Helvetica,sans-Serif" font-size="14.00">items</text>
+</g>
+<!-- po&#45;&gt;item -->
+<g id="edge2" class="edge"><title>po&#45;&gt;item</title>
+<path fill="none" stroke="black" d="M165.029,-71.7685C174.394,-58.6924 188.711,-42.4621 206.048,-35 224.964,-26.858 247.553,-30.5725 266.011,-36.688"/>
+<polygon fill="black" stroke="black" points="264.924,-40.0172 275.518,-40.1631 267.328,-33.4426 264.924,-40.0172"/>
+<text text-anchor="middle" x="229.048" y="-38.8" font-family="Helvetica,sans-Serif" font-size="14.00">add</text>
+</g>
+<!-- po&#45;&gt;item -->
+<g id="edge3" class="edge"><title>po&#45;&gt;item</title>
+<path fill="none" stroke="black" d="M188.215,-78.3938C194.131,-76.4643 200.236,-74.5891 206.048,-73 225.443,-67.6963 247.385,-63.0111 265.341,-59.511"/>
+<polygon fill="black" stroke="black" points="266.237,-62.9034 275.404,-57.5915 264.925,-56.0274 266.237,-62.9034"/>
+<text text-anchor="middle" x="229.048" y="-76.8" font-family="Helvetica,sans-Serif" font-size="14.00">modify</text>
+</g>
+<!-- po&#45;&gt;item -->
+<g id="edge4" class="edge"><title>po&#45;&gt;item</title>
+<path fill="none" stroke="black" d="M188.275,-94.8048C207.583,-95.6951 231.664,-94.82 252.048,-88 259.321,-85.5663 266.465,-81.682 272.964,-77.3701"/>
+<polygon fill="black" stroke="black" points="275.3,-80.0007 281.377,-71.3213 271.214,-74.3172 275.3,-80.0007"/>
+<text text-anchor="middle" x="229.048" y="-98.8" font-family="Helvetica,sans-Serif" font-size="14.00">remove</text>
+</g>
+<!-- snd -->
+<g id="node4" class="node"><title>snd</title>
+<path fill="white" stroke="white" d="M469.048,-98C469.048,-98 439.048,-98 439.048,-98 433.048,-98 427.048,-92 427.048,-86 427.048,-86 427.048,-74 427.048,-74 427.048,-68 433.048,-62 439.048,-62 439.048,-62 469.048,-62 469.048,-62 475.048,-62 481.048,-68 481.048,-74 481.048,-74 481.048,-86 481.048,-86 481.048,-92 475.048,-98 469.048,-98"/>
+<text text-anchor="middle" x="454.048" y="-76.3" font-family="Helvetica,sans-Serif" font-size="14.00">send</text>
+</g>
+<!-- rts&#45;&gt;snd -->
+<g id="edge5" class="edge"><title>rts&#45;&gt;snd</title>
+<path fill="none" stroke="black" d="M335.243,-116.181C356.603,-117.274 385.136,-116.668 409.048,-109 413.379,-107.611 417.688,-105.668 421.819,-103.438"/>
+<polygon fill="black" stroke="black" points="423.756,-106.357 430.52,-98.2021 420.147,-100.359 423.756,-106.357"/>
+</g>
+<!-- item&#45;&gt;snd -->
+<g id="edge9" class="edge"><title>item&#45;&gt;snd</title>
+<path fill="none" stroke="black" d="M329.788,-47.1639C351.545,-43.4584 383.013,-40.7498 409.048,-49 414.392,-50.6937 419.649,-53.2964 424.564,-56.2889"/>
+<polygon fill="black" stroke="black" points="422.746,-59.2841 432.991,-61.9843 426.666,-53.4846 422.746,-59.2841"/>
+<text text-anchor="middle" x="381.048" y="-97.8" font-family="Helvetica,sans-Serif" font-size="14.00">frozen</text>
+<text text-anchor="middle" x="381.048" y="-82.8" font-family="Helvetica,sans-Serif" font-size="14.00">purchase</text>
+<text text-anchor="middle" x="381.048" y="-67.8" font-family="Helvetica,sans-Serif" font-size="14.00">order</text>
+<text text-anchor="middle" x="381.048" y="-52.8" font-family="Helvetica,sans-Serif" font-size="14.00">items</text>
+</g>
+<!-- delivered -->
+<g id="node5" class="node"><title>delivered</title>
+<path fill="white" stroke="white" d="M577.048,-98C577.048,-98 530.048,-98 530.048,-98 524.048,-98 518.048,-92 518.048,-86 518.048,-86 518.048,-74 518.048,-74 518.048,-68 524.048,-62 530.048,-62 530.048,-62 577.048,-62 577.048,-62 583.048,-62 589.048,-68 589.048,-74 589.048,-74 589.048,-86 589.048,-86 589.048,-92 583.048,-98 577.048,-98"/>
+<text text-anchor="middle" x="553.548" y="-76.3" font-family="Helvetica,sans-Serif" font-size="14.00">delivered</text>
+</g>
+<!-- snd&#45;&gt;delivered -->
+<g id="edge6" class="edge"><title>snd&#45;&gt;delivered</title>
+<path fill="none" stroke="black" d="M481.176,-80C489.372,-80 498.666,-80 507.772,-80"/>
+<polygon fill="black" stroke="black" points="507.907,-83.5001 517.907,-80 507.907,-76.5001 507.907,-83.5001"/>
+</g>
+<!-- rfi -->
+<g id="node6" class="node"><title>rfi</title>
+<path fill="white" stroke="white" d="M684.048,-99C684.048,-99 638.048,-99 638.048,-99 632.048,-99 626.048,-93 626.048,-87 626.048,-87 626.048,-73 626.048,-73 626.048,-67 632.048,-61 638.048,-61 638.048,-61 684.048,-61 684.048,-61 690.048,-61 696.048,-67 696.048,-73 696.048,-73 696.048,-87 696.048,-87 696.048,-93 690.048,-99 684.048,-99"/>
+<text text-anchor="middle" x="661.048" y="-83.8" font-family="Helvetica,sans-Serif" font-size="14.00">ready for</text>
+<text text-anchor="middle" x="661.048" y="-68.8" font-family="Helvetica,sans-Serif" font-size="14.00">invoice</text>
+</g>
+<!-- delivered&#45;&gt;rfi -->
+<g id="edge7" class="edge"><title>delivered&#45;&gt;rfi</title>
+<path fill="none" stroke="black" d="M589.092,-80C597.558,-80 606.737,-80 615.595,-80"/>
+<polygon fill="black" stroke="black" points="615.786,-83.5001 625.786,-80 615.786,-76.5001 615.786,-83.5001"/>
+</g>
+<!-- inv -->
+<g id="node7" class="node"><title>inv</title>
+<path fill="white" stroke="white" d="M787.048,-98C787.048,-98 745.048,-98 745.048,-98 739.048,-98 733.048,-92 733.048,-86 733.048,-86 733.048,-74 733.048,-74 733.048,-68 739.048,-62 745.048,-62 745.048,-62 787.048,-62 787.048,-62 793.048,-62 799.048,-68 799.048,-74 799.048,-74 799.048,-86 799.048,-86 799.048,-92 793.048,-98 787.048,-98"/>
+<text text-anchor="middle" x="766.048" y="-76.3" font-family="Helvetica,sans-Serif" font-size="14.00">invoiced</text>
+</g>
+<!-- rfi&#45;&gt;inv -->
+<g id="edge8" class="edge"><title>rfi&#45;&gt;inv</title>
+<path fill="none" stroke="black" d="M696.059,-80C704.567,-80 713.797,-80 722.655,-80"/>
+<polygon fill="black" stroke="black" points="722.819,-83.5001 732.819,-80 722.819,-76.5001 722.819,-83.5001"/>
+</g>
+<!-- end -->
+<g id="node9" class="node"><title>end</title>
+<polygon fill="none" stroke="black" points="875.048,-99.5 836.048,-99.5 836.048,-60.5 875.048,-60.5 875.048,-99.5"/>
+<polyline fill="none" stroke="black" points="848.048,-99.5 836.048,-87.5 "/>
+<polyline fill="none" stroke="black" points="836.048,-72.5 848.048,-60.5 "/>
+<polyline fill="none" stroke="black" points="863.048,-60.5 875.048,-72.5 "/>
+<polyline fill="none" stroke="black" points="875.048,-87.5 863.048,-99.5 "/>
+<text text-anchor="middle" x="855.548" y="-76.3" font-family="Helvetica,sans-Serif" font-size="14.00">end</text>
+</g>
+<!-- inv&#45;&gt;end -->
+<g id="edge11" class="edge"><title>inv&#45;&gt;end</title>
+<path fill="none" stroke="black" d="M799.132,-80C807.843,-80 817.22,-80 825.737,-80"/>
+<polygon fill="black" stroke="black" points="825.953,-83.5001 835.953,-80 825.953,-76.5001 825.953,-83.5001"/>
+</g>
+<!-- start -->
+<g id="node8" class="node"><title>start</title>
+<polygon fill="none" stroke="black" points="39.5238,-109 -0.0237764,-91 39.5238,-73 79.0713,-91 39.5238,-109"/>
+<polyline fill="none" stroke="black" points="10.8981,-95.9711 10.8981,-86.0289 "/>
+<polyline fill="none" stroke="black" points="28.6018,-77.9711 50.4457,-77.9711 "/>
+<polyline fill="none" stroke="black" points="68.1494,-86.0289 68.1494,-95.9711 "/>
+<polyline fill="none" stroke="black" points="50.4457,-104.029 28.6018,-104.029 "/>
+<text text-anchor="middle" x="39.5238" y="-87.3" font-family="Helvetica,sans-Serif" font-size="14.00">start</text>
+</g>
+<!-- start&#45;&gt;po -->
+<g id="edge10" class="edge"><title>start&#45;&gt;po</title>
+<path fill="none" stroke="black" d="M79.1796,-91C87.7701,-91 96.9507,-91 105.779,-91"/>
+<polygon fill="black" stroke="black" points="105.925,-94.5001 115.925,-91 105.925,-87.5001 105.925,-94.5001"/>
+</g>
+</g>
+</svg>
+
+<p>When you enter a web shop, you can search for articles, and put them into a shopping cart. While you are creating your cart, you can change the amount of an article, or delete previously added ones. When you are satisfied with your selection, you finalize your requisition. After finalization, parts of your cart like the items can not be changed any more.</p>
+<p>Article descriptions or names can be changed over time. Prices may vary.</p>
+<h2 id="a-purchase-order">a purchase order</h2>
+<p>A purchase order can have one of the following states</p>
+<pre><code>CREATE TYPE purchase_order_status AS ENUM (
+    &#39;requisition&#39;, 
+    &#39;ready_to_send&#39;, 
+    &#39;send&#39;, 
+    &#39;delivered&#39;,
+    &#39;ready_for_invoice&#39;,
+    &#39;invoiced&#39;,
+    &#39;finalized&#39;);</code></pre>
+<p>It is assumed, that every purchase order has a relation to a <code>customer</code>. For this example this is enough.</p>
+<pre><code>CREATE TABLE purchase_order (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_customer UUID NOT NULL REFERENCES customer(id),
+    purchase_order_number VARCHAR(128) NOT NULL UNIQUE DEFAULT &#39;&#39;,
+    status purchase_order_status NOT NULL DEFAULT &#39;requisition&#39;
+);</code></pre>
+<p>Every purchase order has a unique <code>purchase_order_number</code>.</p>
+<pre><code>CREATE TABLE purchase_order_item (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_purchase_order UUID NOT NULL REFERENCES purchase_order(id),
+    id_article UUID NOT NULL REFERENCES article(id),
+    id_price UUID NOT NULL REFERENCES price(id),
+    amount int NOT NULL DEFAULT 1
+);</code></pre>
+<p>A <code>purchase_order_item</code> has a reference to a <code>purchase_order</code>.</p>
+<p>Unless we are in a mutable state, There is no need for storing extra data. This changes, when the <code>purchase_order_status</code> changes to <code>send</code>. The <code>purchase_order_items</code> can’t be changed any more. The purchased items are on their way to the <code>customer</code>. The only thing, which can change is the <code>purchase_order_status</code>, but only forward in the chain.</p>
+<p>This is the point, where the items should be saved in a immutable way. There are no immutable types in Postgres, but it can be made hard for a process to change such data columns, which should not be updated.</p>
+<p>For our example, we must store the article, with it’s price at the time of purchase. We also need the <code>customer</code>, who must have some kind of address, to send the delivery to.</p>
+<pre><code>ALTER TABLE purchase_order ADD COLUMN frozen_purchase_order JSONB;</code></pre>
+<p>This column should be updated, when the <code>purchase_order_status</code> is set to <code>send</code>. So, we need a trigger function which listens on state changes. The scaffold looks like</p>
+<pre><code>CREATE FUNCTION freeze_purchase_order() RETURNS TRIGGER AS $$
+BEGIN
+    return NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER freeze_purchase_order_trigger BEFORE UPDATE ON purchase_order
+    FOR EACH ROW EXECUTE PROCEDURE freeze_purchase_order();</code></pre>
+<p>Now we listen to the <code>send</code> state. At this point, the purchase order some data have to be frozen. Everything below this state can be ignored.</p>
+<pre><code>IF NEW.status = ANY(&#39;{requisition,ready_to_send}&#39;::purchase_order_status[]) THEN
+    RAISE NOTICE &#39;nothing to do&#39;;
+    RETURN NEW;
+END IF;</code></pre>
+<p>To store some JSON objects we define some variables</p>
+<pre><code>DECLARE
+    frozen_purchase_order JSONB;
+    customer JSONB;
+    purchase_order_items JSONB;
+    rawItem RECORD;</code></pre>
+<p>The <code>frozen_purchase_order</code> will be the result JSON. First we get the current <code>customer</code></p>
+<pre><code>SELECT json_view FROM customer WHERE id = NEW.id_customer INTO customer;</code></pre>
+<p>A purchase order item contains an article and a price. The function to get a json representation for a item can look like</p>
+<pre><code>CREATE FUNCTION get_json_from_item(item_id UUID) RETURNS JSONB AS $$
+DECLARE
+    result JSONB;
+    article JSONB;
+    price JSONB;
+BEGIN
+    SELECT row_to_json(item) FROM (SELECT id_article, id_price, amount FROM purchase_order_item WHERE id = item_id) item INTO result; 
+    SELECT row_to_json(rawArticle) FROM (SELECT id, article_number, name, description FROM article WHERE id = (result-&gt;&gt;&#39;id_article&#39;)::UUID) rawArticle INTO article;
+    SELECT row_to_json(rawPrice) FROM (SELECT id, p.price, scale_lower_limit, scale_upper_limit, valid_from, valid_to FROM price p WHERE id = (result-&gt;&gt;&#39;id_price&#39;)::UUID) rawPrice INTO price;
+
+    result := result 
+     || jsonb_build_object(&#39;article&#39;, article)
+     || jsonb_build_object(&#39;price&#39;, price);
+
+    result := result - &#39;id_article&#39;;
+    result := result - &#39;id_price&#39;;
+
+    RETURN result;
+END
+$$ LANGUAGE plpgsql;</code></pre>
+<p>The purchase order trigger function can consume this function as following</p>
+<pre><code>purchase_order_items := &#39;[]&#39;::JSONB;
+
+FOR rawItem IN (SELECT get_json_from_item(id)::JSONB AS get_json FROM purchase_order_item WHERE id_purchase_order = NEW.id) 
+LOOP
+    purchase_order_items := purchase_order_items || rawItem.get_json;    
+END LOOP;</code></pre>
+<p>The current NEW record must be set as root for our result JSON.</p>
+<pre><code>SELECT row_to_json(NEW.*) INTO frozen_purchase_order;</code></pre>
+<p>Then the <code>customer</code> and the <code>items</code> have to be merged into the result.</p>
+<pre><code>frozen_purchase_order := frozen_purchase_order 
+    || jsonb_build_object(&#39;items&#39;, purchase_order_items)
+    || jsonb_build_object(&#39;customer&#39;, customer);</code></pre>
+<p>At last, some unnecessary fields must be deleted from our frozen purchase order.</p>
+<pre><code>frozen_purchase_order := frozen_purchase_order - &#39;frozen_purchase_order&#39;;
+frozen_purchase_order := frozen_purchase_order - &#39;id_customer&#39;;</code></pre>
+<p>Then we have our result.</p>
+<pre><code>NEW.frozen_purchase_order := frozen_purchase_order;</code></pre>
+<p>The complete function looks like</p>
+<pre><code>CREATE FUNCTION freeze_purchase_order() RETURNS TRIGGER AS $$
+DECLARE
+    frozen_purchase_order JSONB;
+    customer JSONB;
+    purchase_order_items JSONB;
+    rawItem RECORD;
+BEGIN
+    IF NEW.status = ANY(&#39;{requisition,ready_to_send}&#39;::purchase_order_status[]) THEN
+        RAISE NOTICE &#39;nothing to do&#39;;
+        RETURN NEW;
+    END IF;
+    RAISE NOTICE &#39;freeze&#39;;
+
+    SELECT json_view FROM customer WHERE id = NEW.id_customer INTO customer;
+
+    purchase_order_items := &#39;[]&#39;::JSONB;
+
+    FOR rawItem IN (SELECT get_json_from_item(id)::JSONB AS get_json FROM purchase_order_item WHERE id_purchase_order = NEW.id) 
+    LOOP
+        purchase_order_items := purchase_order_items || rawItem.get_json;    
+    END LOOP;
+
+    SELECT row_to_json(NEW.*) INTO frozen_purchase_order;
+
+    frozen_purchase_order := frozen_purchase_order 
+        || jsonb_build_object(&#39;items&#39;, purchase_order_items)
+        || jsonb_build_object(&#39;customer&#39;, customer);
+
+    frozen_purchase_order := frozen_purchase_order - &#39;frozen_purchase_order&#39;;
+    frozen_purchase_order := frozen_purchase_order - &#39;id_customer&#39;;
+
+    NEW.frozen_purchase_order := frozen_purchase_order;
+    
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;</code></pre>
+<h2 id="add-some-data">add some data</h2>
+<pre><code>$ psql -U postgres -c &quot;SELECT id FROM test.customer&quot;
+                  id
+--------------------------------------
+ 7a24ed2c-c873-4fdf-91cf-3574410acc49
+(1 row)
+
+$ psql -U postgres -c &quot;INSERT INTO test.purchase_order (id_customer, purchase_order_number) \
+&gt; VALUES (&#39;7a24ed2c-c873-4fdf-91cf-3574410acc49&#39;, &#39;PO12345&#39;);&quot;
+INSERT 0 1
+
+$ psql -U postgres -c &quot;SELECT * FROM test.purchase_order;&quot;
+                  id                  |             id_customer              | purchase_order_number |   status    | frozen_purchase_order |        created_at         |        updated_at         
+--------------------------------------+--------------------------------------+-----------------------+-------------+-----------------------+---------------------------+---------------------------
+ 29e2fa06-edfc-49ed-878b-49e8ded9bb89 | 7a24ed2c-c873-4fdf-91cf-3574410acc49 | PO12345               | requisition |                       | 2017-07-16 21:15:41.81893 | 2017-07-16 21:15:41.81893
+(1 row)</code></pre>
+<p>Now we add our <code>article</code> with our <code>price</code>.</p>
+<pre><code>$ psql -U postgres -c &quot;SELECT * FROM test.article&quot;
+                  id                  | article_number |     name     | description | status |         created_at         |         updated_at         
+--------------------------------------+----------------+--------------+-------------+--------+----------------------------+----------------------------
+ 0b177d42-368a-4cfa-bf8d-e863f4e8a1bd | AB12345        | Test article | Test desc   | active | 2017-07-16 21:06:03.668307 | 2017-07-16 21:06:03.668307
+(1 row)
+
+$ psql -U postgres -c &quot;SELECT * FROM test.price;&quot;
+                  id                  |              id_article              | price | scale_lower_limit | scale_upper_limit | valid_from |  valid_to  | history |         created_at         |         updated_at         
+--------------------------------------+--------------------------------------+-------+-------------------+-------------------+------------+------------+---------+----------------------------+----------------------------
+ ac73b43d-e5ef-46dd-81e9-94291aa669c7 | 0b177d42-368a-4cfa-bf8d-e863f4e8a1bd |  50.5 |                 1 |        2147483647 | 2017-07-16 | 2018-07-16 |         | 2017-07-16 21:06:03.668307 | 2017-07-16 21:06:03.668307
+(1 row)
+
+$ psql -U postgres -c &quot;INSERT INTO test.purchase_order_item (id_purchase_order, id_article, id_price) \
+&gt; VALUES (&#39;29e2fa06-edfc-49ed-878b-49e8ded9bb89&#39;, &#39;0b177d42-368a-4cfa-bf8d-e863f4e8a1bd&#39;, &#39;ac73b43d-e5ef-46dd-81e9-94291aa669c7&#39;)&quot;
+INSERT 0 1</code></pre>
+<p>Changing the state to <code>ready_to_send</code> will result</p>
+<pre><code>$ psql -U postgres -c &quot;SET search_path TO test,public; UPDATE purchase_order SET status = &#39;ready_to_send&#39; \ 
+&gt; WHERE id = &#39;29e2fa06-edfc-49ed-878b-49e8ded9bb89&#39;&quot;
+NOTICE:  nothing to do
+UPDATE 1</code></pre>
+<p>Now we set the state to ‘send’</p>
+<pre><code>$ psql -U postgres -c &quot;SET search_path TO test,public; UPDATE purchase_order SET status = &#39;send&#39; \
+&gt; WHERE id = &#39;29e2fa06-edfc-49ed-878b-49e8ded9bb89&#39;&quot;
+NOTICE:  freeze
+UPDATE 1
+
+$ psql -U postgres -c &quot;SELECT * from test.purchase_order&quot; | cat
+                  id                  |             id_customer              | purchase_order_number | status |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  frozen_purchase_order                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |        created_at         |        updated_at         
+--------------------------------------+--------------------------------------+-----------------------+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------+---------------------------
+ 29e2fa06-edfc-49ed-878b-49e8ded9bb89 | 7a24ed2c-c873-4fdf-91cf-3574410acc49 | PO12345               | send   | {&quot;id&quot;: &quot;29e2fa06-edfc-49ed-878b-49e8ded9bb89&quot;, &quot;items&quot;: [{&quot;price&quot;: {&quot;id&quot;: &quot;ac73b43d-e5ef-46dd-81e9-94291aa669c7&quot;, &quot;price&quot;: 50.5, &quot;valid_to&quot;: &quot;2018-07-16&quot;, &quot;valid_from&quot;: &quot;2017-07-16&quot;, &quot;scale_lower_limit&quot;: 1, &quot;scale_upper_limit&quot;: 2147483647}, &quot;amount&quot;: 1, &quot;article&quot;: {&quot;id&quot;: &quot;0b177d42-368a-4cfa-bf8d-e863f4e8a1bd&quot;, &quot;name&quot;: &quot;Test article&quot;, &quot;description&quot;: &quot;Test desc&quot;, &quot;article_number&quot;: &quot;AB12345&quot;}}], &quot;status&quot;: &quot;send&quot;, &quot;changes&quot;: null, &quot;customer&quot;: {&quot;id&quot;: &quot;7a24ed2c-c873-4fdf-91cf-3574410acc49&quot;, &quot;person&quot;: {&quot;id&quot;: &quot;35b40b2f-bf40-4f71-8319-f7757de3e1f4&quot;, &quot;notes&quot;: null, &quot;website&quot;: null, &quot;addresses&quot;: [{&quot;id&quot;: &quot;7a7f1e44-f6a6-495e-893b-e5806289ea81&quot;, &quot;city&quot;: &quot;Dortmund&quot;, &quot;street&quot;: &quot;Fakestreet&quot;, &quot;postal_code&quot;: &quot;44339&quot;, &quot;address_type&quot;: &quot;private&quot;, &quot;street_number&quot;: &quot;123&quot;}, {&quot;id&quot;: &quot;1d8c41e5-bcd6-4842-864d-62c4da2fc506&quot;, &quot;city&quot;: &quot;Bochum&quot;, &quot;street&quot;: &quot;Fakestreet&quot;, &quot;postal_code&quot;: &quot;44866&quot;, &quot;address_type&quot;: &quot;work&quot;, &quot;street_number&quot;: &quot;321&quot;}], &quot;last_name&quot;: &quot;Hake&quot;, &quot;birth_date&quot;: null, &quot;first_name&quot;: &quot;Jan Frederik&quot;, &quot;phone_numbers&quot;: [{&quot;id&quot;: &quot;618d19d6-3daf-4029-8d0f-1535272ec212&quot;, &quot;phone_number&quot;: &quot;+49123456789&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;landline&quot;, &quot;is_primary_phone_number&quot;: true}, {&quot;id&quot;: &quot;81403e1d-1055-4953-8b1a-fcca9d034b1b&quot;, &quot;phone_number&quot;: &quot;+49151123456789&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;cellular_network&quot;, &quot;is_primary_phone_number&quot;: false}], &quot;email_addresses&quot;: [{&quot;id&quot;: &quot;a2f79f62-a497-4bdb-8f1b-03d6b7aacb30&quot;, &quot;email_address&quot;: &quot;jan_hake@fake.de&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;is_primary_email_address&quot;: false}]}, &quot;customer_number&quot;: &quot;AB123456&quot;}, &quot;created_at&quot;: &quot;2017-07-16T21:15:41.81893&quot;, &quot;updated_at&quot;: &quot;2017-07-16T21:25:03.02978&quot;, &quot;purchase_order_number&quot;: &quot;PO12345&quot;} | 2017-07-16 21:15:41.81893 | 2017-07-16 21:26:44.87835
+(1 row)</code></pre>
+<p>The frozen purchase order looks like</p>
+<pre><code>{
+    &quot;id&quot;: &quot;29e2fa06-edfc-49ed-878b-49e8ded9bb89&quot;,
+    &quot;items&quot;: [{
+        &quot;price&quot;: {
+            &quot;id&quot;: &quot;ac73b43d-e5ef-46dd-81e9-94291aa669c7&quot;,
+            &quot;price&quot;: 50.5,
+            &quot;valid_to&quot;: &quot;2018-07-16&quot;,
+            &quot;valid_from&quot;: &quot;2017-07-16&quot;,
+            &quot;scale_lower_limit&quot;: 1,
+            &quot;scale_upper_limit&quot;: 2147483647
+        },
+        &quot;amount&quot;: 1,
+        &quot;article&quot;: {
+            &quot;id&quot;: &quot;0b177d42-368a-4cfa-bf8d-e863f4e8a1bd&quot;,
+            &quot;name&quot;: &quot;Test article&quot;,
+            &quot;description&quot;: &quot;Test desc&quot;,
+            &quot;article_number&quot;: &quot;AB12345&quot;
+        }
+    }],
+    &quot;status&quot;: &quot;send&quot;,
+    &quot;changes&quot;: null,
+    &quot;customer&quot;: {
+        &quot;id&quot;: &quot;7a24ed2c-c873-4fdf-91cf-3574410acc49&quot;,
+        &quot;person&quot;: {
+            &quot;id&quot;: &quot;35b40b2f-bf40-4f71-8319-f7757de3e1f4&quot;,
+            &quot;notes&quot;: null,
+            &quot;website&quot;: null,
+            &quot;addresses&quot;: [{
+                &quot;id&quot;: &quot;7a7f1e44-f6a6-495e-893b-e5806289ea81&quot;,
+                &quot;city&quot;: &quot;Dortmund&quot;,
+                &quot;street&quot;: &quot;Fakestreet&quot;,
+                &quot;postal_code&quot;: &quot;44339&quot;,
+                &quot;address_type&quot;: &quot;private&quot;,
+                &quot;street_number&quot;: &quot;123&quot;
+            }, {
+                &quot;id&quot;: &quot;1d8c41e5-bcd6-4842-864d-62c4da2fc506&quot;,
+                &quot;city&quot;: &quot;Bochum&quot;,
+                &quot;street&quot;: &quot;Fakestreet&quot;,
+                &quot;postal_code&quot;: &quot;44866&quot;,
+                &quot;address_type&quot;: &quot;work&quot;,
+                &quot;street_number&quot;: &quot;321&quot;
+            }],
+            &quot;last_name&quot;: &quot;Hake&quot;,
+            &quot;birth_date&quot;: null,
+            &quot;first_name&quot;: &quot;Jan Frederik&quot;,
+            &quot;phone_numbers&quot;: [{
+                &quot;id&quot;: &quot;618d19d6-3daf-4029-8d0f-1535272ec212&quot;,
+                &quot;phone_number&quot;: &quot;+49123456789&quot;,
+                &quot;communication_type&quot;: &quot;private&quot;,
+                &quot;communication_network&quot;: &quot;landline&quot;,
+                &quot;is_primary_phone_number&quot;: true
+            }, {
+                &quot;id&quot;: &quot;81403e1d-1055-4953-8b1a-fcca9d034b1b&quot;,
+                &quot;phone_number&quot;: &quot;+49151123456789&quot;,
+                &quot;communication_type&quot;: &quot;private&quot;,
+                &quot;communication_network&quot;: &quot;cellular_network&quot;,
+                &quot;is_primary_phone_number&quot;: false
+            }],
+            &quot;email_addresses&quot;: [{
+                &quot;id&quot;: &quot;a2f79f62-a497-4bdb-8f1b-03d6b7aacb30&quot;,
+                &quot;email_address&quot;: &quot;jan_hake@fake.de&quot;,
+                &quot;communication_type&quot;: &quot;private&quot;,
+                &quot;is_primary_email_address&quot;: false
+            }]
+        },
+        &quot;customer_number&quot;: &quot;AB123456&quot;
+    },
+    &quot;created_at&quot;: &quot;2017-07-16T21:15:41.81893&quot;,
+    &quot;updated_at&quot;: &quot;2017-07-16T21:25:03.02978&quot;,
+    &quot;purchase_order_number&quot;: &quot;PO12345&quot;
+}</code></pre>
+<p>This approach looks promising. In the next part, we look into updating those structures.</p>]]></summary>
+</entry>
+<entry>
     <title>Automatically update MIT licenses</title>
     <link href="https://enter-haken.github.io/posts/2017-07-07-update-mit-license.html" />
     <id>https://enter-haken.github.io/posts/2017-07-07-update-mit-license.html</id>
@@ -348,7 +946,7 @@ $$ LANGUAGE plpgsql;</code></pre>
     }]
 }</code></pre>
 <p>Every time the <code>update_json_view_person</code> function is called, the <code>json_view</code> column is updated with the current relational data.</p>
-<p>In the next part, I take a look at some other use cases and make some measurements regarding performance.</p>]]></summary>
+<p>In the next part, I take a look at some other use cases.</p>]]></summary>
 </entry>
 <entry>
     <title>providing test data for databases</title>
@@ -1078,37 +1676,6 @@ done</code></pre>
     11 yjbanov
     11 Marc Laval</code></pre>
 <p>The output gives you a hint, what is currently happening in the repository. It says nothing about the quality of the work of the committer. <a href="https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History">Rewriting commits</a> is often use to have a slim commit history. Others leave the commits as they are. For an older repository it may be more interesting, what has happened e.g. in the last two years. With a few adjustments this can be achieved. See <a href="https://git-scm.com/docs/git-log">git log –since</a> for more information.</p>]]></summary>
-</entry>
-<entry>
-    <title>getting better</title>
-    <link href="https://enter-haken.github.io/posts/2016-02-27-getting-better.html" />
-    <id>https://enter-haken.github.io/posts/2016-02-27-getting-better.html</id>
-    <published>2016-02-27T00:00:00Z</published>
-    <updated>2016-02-27T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>When you think about programming, you will have writing code in mind. Although pressing you ideas into executable code is one of the finest discipline for a software engineer, but it doesn’t tell the whole story.</p>
-<p>There are some techniques and abilities, a good software developer should have from my point of view.</p>
-<!--more-->
-<h1 id="brain-debug">brain debug</h1>
-<p>A college of mine called it “brain debug”. An ability to debug code without running it. From my perspective a good thing. This shows, that you know what you are doing. You have an idea, how your code behaves, before you execute it for the first time. Often good programmers write a brunch of code, before they compile it.</p>
-<h1 id="write-code-for-humans">write code for humans</h1>
-<p>A lot of people can write code, that simply compile. Good programmers write code a human can understand. Imagine you have to fix a bug in a part of an application you have written half a year or so. Would it be nice you can dive into your own code as quick as possible? Imagine how nice it would be, when the person who have to dive isn’t you, has the same chance?</p>
-<h1 id="break-it-down">break it down</h1>
-<p>Having a big rock, put it into smaller peaces you can lift and turn round, is another ability a good programmer should have. When you get specifications for a program to build, with hundreds of pages of requirements, you should be able to break it down into parts, a human can understand.</p>
-<h1 id="take-care-of-your-data">take care of your data</h1>
-<p>The next part may defer from type to type. After rock bricking, many good programmers like to start with the <a href="http://programmers.stackexchange.com/questions/102041/why-are-data-structures-so-important-in-interviews">data structure</a> first. Others like to sketch the UI interfaces first. A short <a href="http://lwn.net/Articles/193245/">cite</a> for this came from Linus Torvalds (2006)</p>
-<blockquote>
-<p>I will, in fact, claim that the difference between a bad programmers and a good one is whether he considers his code or his data structures more important. Bad programmers worry about the code. Good programmers worry about data structures and their relationships.</p>
-</blockquote>
-<h1 id="read">read</h1>
-<p>When you are working with together with other developers, software is getting big very quickly. You probably have to work with an existing repository. Therefore reading code is an important ability. New code had to fit in the existing architecture. Writing self-documenting code is a good thing for reducing code size. This leads often more and shorter Functions. This increases the reuse of existing code.</p>
-<h1 id="finally">finally …</h1>
-<p>There is no short cut. Programming needs time. The right questions will come, while programming. Talk to colleagues about your work or even better (read) code together.</p>
-<h1 id="further-reading">further reading</h1>
-<ul>
-<li><a href="http://henrikwarne.com/2015/04/16/lessons-learned-in-software-development/">lessons learned in sofware development</a></li>
-<li><a href="http://henrikwarne.com/2014/06/30/what-makes-a-good-programmer/">what makes a good programmer</a></li>
-<li><a href="https://en.wikipedia.org/wiki/No_Silver_Bullet">there is no silver bullet</a></li>
-</ul>]]></summary>
 </entry>
 
 </feed>

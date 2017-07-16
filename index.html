@@ -22,6 +22,32 @@
             <ul id="list">
     
         <li>
+            <a href="./posts/2017-07-15-database-architecture-part2.html">Working with immutable data in Postgres</a> - July 15, 2017
+            
+            <p>
+                <p>After taking a <a href="./posts/2017-07-06-database-architecture.html">first look</a> at the JSON columns, let’s look at a few possible applications. Imagine a simple shop system with articles, prices and purchase orders.</p>
+<p>An article can be <code>active</code> or <code>inactive</code>.</p>
+<pre><code>CREATE TYPE article_status AS ENUM (
+    'active',
+    'inactive'
+);</code></pre>
+<p>Every article has an <code>article_number</code>.</p>
+<pre><code>CREATE TABLE article (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    article_number VARCHAR(128) UNIQE NOT NULL DEFAULT '',
+    name VARCHAR(128),
+    description VARCHAR(2048),
+    status article_status NOT NULL DEFAULT 'active'
+);</code></pre>
+<p>You can see that <code>id</code> and <code>article_number</code> are unique, so both could be used as a primary key. This is not normalized in a usual way.</p>
+<p>There are a few points, why to stick to this solution.</p>
+
+            </p>
+            <a href="./posts/2017-07-15-database-architecture-part2.html">more</a>
+            
+        </li>
+    
+        <li>
             <a href="./posts/2017-07-07-update-mit-license.html">Automatically update MIT licenses</a> - July  7, 2017
             
             <p>

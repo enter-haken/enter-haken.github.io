@@ -8,14 +8,14 @@
         <name>Jan Frederik Hake</name>
         <email>jan_hake@gmx.de</email>
     </author>
-    <updated>2017-07-18T00:00:00Z</updated>
+    <updated>2017-07-20T00:00:00Z</updated>
     <entry>
     <title>Generate a ERM from a PostgreSQL database schema</title>
-    <link href="https://enter-haken.github.io/posts/2017-07-18-orm-graphviz.html" />
-    <id>https://enter-haken.github.io/posts/2017-07-18-orm-graphviz.html</id>
-    <published>2017-07-18T00:00:00Z</published>
-    <updated>2017-07-18T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Creating a <a href="https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model">ERM</a> is one of the first tasks, when a database is designed. During implementation, you have to sync the model with the schema. This manual task can be very annoying. With some database knowledge and some linux standard tools, this task can be automated.</p>
+    <link href="https://enter-haken.github.io/posts/2017-07-20-erm-graphviz.html" />
+    <id>https://enter-haken.github.io/posts/2017-07-20-erm-graphviz.html</id>
+    <published>2017-07-20T00:00:00Z</published>
+    <updated>2017-07-20T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>Creating a <a href="https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model">ERM</a> is one of the first tasks, when a database is designed. During implementation, you have to sync the model with the schema. This manual task can be very annoying. With some database knowledge and some Linux standard tools, this task can be automated.</p>
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -149,7 +149,7 @@
  address                | id                    | person_to_address_id_address_fkey
  email                  | id                    | email_pkey
  person_to_email        | id_person             | person_to_email_pkey</code></pre>
-<p>With this we are comming to our next query.</p>
+<p>With this we are coming to our next query.</p>
 <pre><code>$  psql -U postgres -c &quot;SELECT c.table_name,
 &gt; c.column_name,
 &gt; c.data_type,
@@ -217,7 +217,7 @@
  work                   | communication_type
  cellular_network       | communication_network</code></pre>
 <p>This can be matched on the column <code>udt_name</code>.</p>
-<p>Now we have our final sql statement for now.</p>
+<p>Now we have our final SQL statement for now.</p>
 <pre><code>$ psql -U postgres -c &quot;SELECT c.table_name, 
 &gt; c.column_name, 
 &gt; c.data_type, 
@@ -381,7 +381,7 @@
 </g>
 </svg>
 
-<p>The table colum layout fits our needs for our relation. The <code>port</code> attribute is important for the edges.</p>
+<p>The table column layout fits our needs for our relation. The <code>port</code> attribute is important for the edges.</p>
 <p>If we have a <code>person</code> and a <code>customer</code>, adding</p>
 <pre><code>customer -&gt; person;</code></pre>
 <p>will create an edge for these relations.</p>
@@ -503,7 +503,7 @@
  article                | updated_at               | timestamp without time zone | timestamp             |                                                                                     | NO          |                          |             |             |                 |</code></pre>
 <p>Now we have a record in every line.</p>
 <h1 id="get-started-with-awk">get started with awk</h1>
-<p>An awk programm has the following structure.</p>
+<p>An awk program has the following structure.</p>
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -584,7 +584,7 @@
 
     currentTableName = $1
 }</code></pre>
-<p>THe END part closes the last TABLE and closes the graph.</p>
+<p>The END part closes the last TABLE and closes the graph.</p>
 <pre><code>END {
     print(&quot;&lt;/TABLE&gt;&gt;]&quot;)
     print(&quot;}&quot;)

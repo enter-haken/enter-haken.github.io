@@ -53,7 +53,7 @@ SET search_path TO test,public;</code></pre>
 <pre><code>CREATE TABLE address (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     street VARCHAR(512), 
-    street_number VARCHAR(128),
+    house_number VARCHAR(128),
     postal_code VARCHAR(10),
     city VARCHAR(512)
 );</code></pre>
@@ -140,7 +140,7 @@ $$ LANGUAGE plpgsql;</code></pre>
     SELECT first_name, 
             last_name, 
             street, 
-            street_number, 
+            house_number, 
             postal_code,
             city,
             email_address,
@@ -154,7 +154,7 @@ $$ LANGUAGE plpgsql;</code></pre>
         JOIN phone ph on ph.id = p2p.id_phone;</code></pre>
 <p>You get a tabular result with many redundant data here. The next layer will take this raw data and transform it into objects.</p>
 <pre><code>$ psql -U postgres -c &quot;select * from test.person_view&quot;
-  first_name  | last_name |   street   | street_number | postal_code |   city   | address_type |  email_address   |  phone_number  
+  first_name  | last_name |   street   | house_number | postal_code |   city   | address_type |  email_address   |  phone_number  
 --------------+-----------+------------+---------------+-------------+----------+--------------+------------------+----------------
  Jan Frederik | Hake      | No Street  | 3-4           | 54321       | Dortmund | work         | jan_hake@fake.de | +4923111223344
  Jan Frederik | Hake      | Fakestreet | 123           | 12345       | Dortmund | private      | jan_hake@fake.de | +4923111223344
@@ -187,7 +187,7 @@ $$ LANGUAGE plpgsql;</code></pre>
 <p>There are many <a href="https://www.postgresql.org/docs/9.3/static/functions-json.html">json functions</a> available for Postgres. The <code>row_to_json</code> function will create a json object for every result row. In this case it is just one row.</p>
 <p>When you want to add the address data you can use the <code>array_agg</code> <a href="https://www.postgresql.org/docs/current/static/functions-aggregate.html">aggregate function</a> to create an array from a result,</p>
 <pre><code>SELECT array_to_json(array_agg(addresses)) FROM 
-    (SELECT a.id, street, street_number, postal_code, city, p2a.address_type FROM address a
+    (SELECT a.id, street, house_number, postal_code, city, p2a.address_type FROM address a
     JOIN person_to_address p2a ON a.id = p2a.id_address WHERE p2a.id_person = person_id) addresses 
     INTO person_addresses;</code></pre>
 <p>where <code>person_to_addresses</code> is a local <code>JSONB</code> variable. The <code>array_to_json</code> function creates a json array, which can be added to the <code>person_raw</code> with <code>json_build_object</code>.</p>
@@ -207,7 +207,7 @@ BEGIN
             WHERE id = person_id LIMIT 1) p INTO person_raw;
     
     SELECT array_to_json(array_agg(addresses)) FROM 
-        (SELECT a.id, street, street_number, postal_code, city, p2a.address_type FROM address a
+        (SELECT a.id, street, house_number, postal_code, city, p2a.address_type FROM address a
         JOIN person_to_address p2a ON a.id = p2a.id_address WHERE p2a.id_person = person_id) addresses 
         INTO person_addresses;
     
@@ -233,7 +233,7 @@ $$ LANGUAGE plpgsql;</code></pre>
 <pre><code>$ psql -U postgres -c &quot;select json_view from test.person&quot; | cat
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  json_view                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- {&quot;id&quot;: &quot;5824be75-b444-4ac7-8d59-0763e6a6a9b3&quot;, &quot;notes&quot;: null, &quot;website&quot;: null, &quot;addresses&quot;: [{&quot;id&quot;: &quot;41a93a1b-fd31-4f05-8a63-8921a926223c&quot;, &quot;city&quot;: &quot;Dortmund&quot;, &quot;street&quot;: &quot;Fakestreet&quot;, &quot;postal_code&quot;: &quot;12345&quot;, &quot;address_type&quot;: &quot;private&quot;, &quot;street_number&quot;: &quot;123&quot;}, {&quot;id&quot;: &quot;4a2558c9-13b5-49a8-89b8-52022575040b&quot;, &quot;city&quot;: &quot;Dortmund&quot;, &quot;street&quot;: &quot;No Street&quot;, &quot;postal_code&quot;: &quot;54321&quot;, &quot;address_type&quot;: &quot;work&quot;, &quot;street_number&quot;: &quot;3-4&quot;}], &quot;last_name&quot;: &quot;Hake&quot;, &quot;birth_date&quot;: null, &quot;first_name&quot;: &quot;Jan Frederik&quot;, &quot;phone_numbers&quot;: [{&quot;id&quot;: &quot;86941ea5-fe53-4251-bdfc-abafca40b4ab&quot;, &quot;phone_number&quot;: &quot;+4923111223344&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;landline&quot;, &quot;is_primary_phone_number&quot;: true}, {&quot;id&quot;: &quot;96b8ebd3-f514-4fd7-997c-136e4a6eb270&quot;, &quot;phone_number&quot;: &quot;+4915199887766&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;cellular_network&quot;, &quot;is_primary_phone_number&quot;: false}], &quot;email_addresses&quot;: [{&quot;id&quot;: &quot;9fc2ea91-cf68-4624-a903-381d765be25c&quot;, &quot;email_address&quot;: &quot;jan_hake@fake.de&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;is_primary_email_address&quot;: false}]}
+ {&quot;id&quot;: &quot;5824be75-b444-4ac7-8d59-0763e6a6a9b3&quot;, &quot;notes&quot;: null, &quot;website&quot;: null, &quot;addresses&quot;: [{&quot;id&quot;: &quot;41a93a1b-fd31-4f05-8a63-8921a926223c&quot;, &quot;city&quot;: &quot;Dortmund&quot;, &quot;street&quot;: &quot;Fakestreet&quot;, &quot;postal_code&quot;: &quot;12345&quot;, &quot;address_type&quot;: &quot;private&quot;, &quot;house_number&quot;: &quot;123&quot;}, {&quot;id&quot;: &quot;4a2558c9-13b5-49a8-89b8-52022575040b&quot;, &quot;city&quot;: &quot;Dortmund&quot;, &quot;street&quot;: &quot;No Street&quot;, &quot;postal_code&quot;: &quot;54321&quot;, &quot;address_type&quot;: &quot;work&quot;, &quot;house_number&quot;: &quot;3-4&quot;}], &quot;last_name&quot;: &quot;Hake&quot;, &quot;birth_date&quot;: null, &quot;first_name&quot;: &quot;Jan Frederik&quot;, &quot;phone_numbers&quot;: [{&quot;id&quot;: &quot;86941ea5-fe53-4251-bdfc-abafca40b4ab&quot;, &quot;phone_number&quot;: &quot;+4923111223344&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;landline&quot;, &quot;is_primary_phone_number&quot;: true}, {&quot;id&quot;: &quot;96b8ebd3-f514-4fd7-997c-136e4a6eb270&quot;, &quot;phone_number&quot;: &quot;+4915199887766&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;communication_network&quot;: &quot;cellular_network&quot;, &quot;is_primary_phone_number&quot;: false}], &quot;email_addresses&quot;: [{&quot;id&quot;: &quot;9fc2ea91-cf68-4624-a903-381d765be25c&quot;, &quot;email_address&quot;: &quot;jan_hake@fake.de&quot;, &quot;communication_type&quot;: &quot;private&quot;, &quot;is_primary_email_address&quot;: false}]}
 (1 row)</code></pre>
 <p>With a little bit formatting you get.</p>
 <pre><code>{
@@ -246,14 +246,14 @@ $$ LANGUAGE plpgsql;</code></pre>
         &quot;street&quot;: &quot;Fakestreet&quot;,
         &quot;postal_code&quot;: &quot;12345&quot;,
         &quot;address_type&quot;: &quot;private&quot;,
-        &quot;street_number&quot;: &quot;123&quot;
+        &quot;house_number&quot;: &quot;123&quot;
     }, {
         &quot;id&quot;: &quot;4a2558c9-13b5-49a8-89b8-52022575040b&quot;,
         &quot;city&quot;: &quot;Dortmund&quot;,
         &quot;street&quot;: &quot;No Street&quot;,
         &quot;postal_code&quot;: &quot;54321&quot;,
         &quot;address_type&quot;: &quot;work&quot;,
-        &quot;street_number&quot;: &quot;3-4&quot;
+        &quot;house_number&quot;: &quot;3-4&quot;
     }],
     &quot;last_name&quot;: &quot;Hake&quot;,
     &quot;birth_date&quot;: null,

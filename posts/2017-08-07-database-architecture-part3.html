@@ -347,7 +347,7 @@ BEGIN
     RETURN raw_result;
 END
 $$ LANGUAGE plpgsql;</code></pre>
-<p>This will work, if the <code>customer</code> has no reference to other tables. After a first <code>purchase_order</code> is created, deletion won’t work any more, due to referential integrity constraints. This is an issue, to think about. In Germany for example, you have to store invoices for several years. This means, customers won’t be deleted, until there last invoice is deleted. There is one approach, to set a own <code>deleted</code> property for a <code>customer</code>. This property is very handy, so it can be included into the post dll script.</p>
+<p>This will work, if the <code>customer</code> has no reference to other tables. After a first <code>purchase_order</code> is created, deletion won’t work any more, due to referential integrity constraints. This is an issue, to think about. In Germany for example, you have to store invoices for several years. This means, customers won’t be deleted, until there last invoice is deleted. There is one approach, to set a own <code>deleted</code> property for a <code>customer</code>. This property is very handy, so it can be included into the post <a href="https://en.wikipedia.org/wiki/Data_definition_language">DDL</a> script.</p>
 <pre><code>CREATE FUNCTION add_metadata_to_every_table() RETURNS VOID AS $$
 DECLARE 
     row record;

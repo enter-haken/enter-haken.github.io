@@ -50,6 +50,15 @@ git config --global alias.st status</code></pre>
 git unstage file.txt</code></pre>
 <h3 id="show-graph">show graph</h3>
 <pre><code>git config --global alias.l &quot;log --graph --oneline --all&quot;</code></pre>
+<h3 id="cat-diff-to-default-browser">cat diff to default browser</h3>
+<p>With <a href="https://diff2html.xyz/">diff2html</a> a <code>git diff</code> output can be transformed into html.</p>
+<pre><code>npm install -g diff2html</code></pre>
+<p><a href="https://rtomayko.github.io/bcat/">bcat</a> is a tool for piping data to the standard browser.</p>
+<pre><code>git diff branch_1..branch_2 | diff2html -i stdin -o stdout | bcat</code></pre>
+<p>With an alias</p>
+<pre><code>alias bdiff=&quot;diff2html -i stdin -o stdout | bcat&quot;</code></pre>
+<p>the call can be simplified to.</p>
+<pre><code>git diff branch_1..branch_2 | bdiff</code></pre>
 <h1 id="firefox-addons">firefox addons</h1>
 <ul>
 <li><a href="https://addons.mozilla.org/de/firefox/addon/vimfx/">VimFx</a> - using vim commands for browsing</li>

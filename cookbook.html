@@ -59,6 +59,8 @@ git unstage file.txt</code></pre>
 <pre><code>alias bdiff=&quot;diff2html -i stdin -o stdout | bcat&quot;</code></pre>
 <p>the call can be simplified to.</p>
 <pre><code>git diff branch_1..branch_2 | bdiff</code></pre>
+<p>If you want to see the history of a file, you can use</p>
+<pre><code>git log -p filename | bdiff</code></pre>
 <h1 id="firefox-addons">firefox addons</h1>
 <ul>
 <li><a href="https://addons.mozilla.org/de/firefox/addon/vimfx/">VimFx</a> - using vim commands for browsing</li>

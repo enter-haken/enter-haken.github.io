@@ -41,6 +41,11 @@
 <pre><code>sed '/^\s*$/d'</code></pre>
 <p>count lines of code (simple)</p>
 <pre><code>find . -name '*.extension' | xargs wc -l</code></pre>
+<h1 id="bash">bash</h1>
+<pre><code>HISTSIZE=&quot;&quot;</code></pre>
+<p>or</p>
+<pre><code>HISTSIZE=&quot;INFINITE&quot;</code></pre>
+<p>will let the <code>~/.bash_history</code> grow infinitely. <a href="https://superuser.com/questions/479726/how-to-get-infinite-command-history-in-bash">source</a></p>
 <h1 id="git">git</h1>
 <p>pull all repositories located in sub directories, assuming there are only subdirectories in the current directory</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#!/bin/bash</span>

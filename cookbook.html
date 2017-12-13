@@ -91,6 +91,11 @@ git unstage file.txt</code></pre>
 <pre><code>git diff branch_1..branch_2 | bdiff</code></pre>
 <p>If you want to see the history of a file, you can use</p>
 <pre><code>git log -p filename | bdiff</code></pre>
+<h3 id="cat-the-content-of-a-libreoffice-or-docx-document-to-console">cat the content of a libreoffice or docx document to console</h3>
+<pre><code>alias lcat=&quot;libreoffice --cat&quot;</code></pre>
+<p>with</p>
+<pre><code>lcat document.docx | vim -</code></pre>
+<p>you can browse the text content in your favourite editor ;)</p>
 <h1 id="firefox-addons">firefox addons</h1>
 <ul>
 <li><a href="https://addons.mozilla.org/de/firefox/addon/vimfx/">VimFx</a> - using vim commands for browsing</li>

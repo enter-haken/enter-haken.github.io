@@ -41,6 +41,8 @@
 <pre><code>sed '/^\s*$/d'</code></pre>
 <p>count lines of code (simple)</p>
 <pre><code>find . -name '*.extension' | xargs wc -l</code></pre>
+<p>same as above without emtpy lines and comments for erlang files</p>
+<pre><code>find . -name '*.erl' | xargs cat | sed -e '/^%/d' -e '/^\s*$/d' | wc -l</code></pre>
 <h1 id="bash">bash</h1>
 <pre><code>HISTSIZE=&quot;&quot;</code></pre>
 <p>or</p>

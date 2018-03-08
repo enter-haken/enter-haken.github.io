@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>enter_haken - get in touch with vue</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109218061-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'UA-109218061-1', { 'anonymize_ip' : true });
+        </script>
+    </head>
+    <body>
+        <div id="header">
+            <div id="navigation">
+                <a href="../">enter_haken</a>
+                <a href="../projects.html">projects</a>
+                <a href="../cookbook.html">cookbook</a>
+                <a href="../notes.html">notes</a>
+                <a href="../read.html">read</a>
+                <a href="../about.html">about</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>get in touch with vue</h1>
+
+<div class="info">
+    
+    Posted on March  8, 2018
+    
+        
+</div>
+
+<p>I’ve been recently asked to build up a little <code>vue</code> example. The task is, to show appointments from a google calendar. I know some <code>react</code> stuff, but the <code>vue</code> framework and the google api was new for me. So I start with some digging.</p>
+<p>First things first. The <code>vue</code> example will be a client only solution. As like <code>create-react-app</code>, I use <a href="https://github.com/vuejs/vue-cli">vue-cli</a> to bootstrap my application.</p>
+<!--more-->
+<h1 id="editor-preparation">editor preparation</h1>
+<p>I use vim on a daily base. Editing <code>vue</code> files is similar to editing <code>react</code> files. You can have a mixture of javascript and templates. There is a <a href="https://github.com/posva/vim-vue">vim plugin</a>,</p>
+<pre><code>Plugin 'posva/vim-vue'</code></pre>
+<p>which helps editing <code>vue</code> files. I also update the linter, to get error information from <a href="https://github.com/vim-syntastic/syntastic">syntastic</a></p>
+<pre><code> $ npm i -g eslint eslint-plugin-vue</code></pre>
+<h1 id="set-up-the-development-stack">set up the development stack</h1>
+<p>After installing the vue cli tool,</p>
+<pre><code>$ npm install -g @vue/cli</code></pre>
+<p>I can bootstrap my <code>appointment</code> application with</p>
+<pre><code>$ vue create appointment</code></pre>
+<p>A git repo is initialized with the current logged on user credentials.</p>
+<p>With</p>
+<pre><code>$ npm run build</code></pre>
+<p>a minified version of the application is put into the <code>dist</code> folder.</p>
+<pre><code>$ npm run serve </code></pre>
+<p>will build and run the application on port <code>8080</code>. This will be used during development.</p>
+<h1 id="google-api">google api</h1>
+<p>To get access to the google calendar, I have to create a project in the <a href="https://console.developers.google.com">google developer console</a>. I need an <code>api key</code> and an <code>oauth2 id</code> for my application. The <code>authorized javascript sources</code> must be configured for the <code>oauth2 id</code>. The <a href="https://developers.google.com/google-apps/calendar/quickstart/js">example</a> from the <a href="https://developers.google.com/google-apps/calendar">google api documentation</a> works as expected.</p>
+<h1 id="root-component">root component</h1>
+<p>The <code>data</code> is stored in <code>eventResult</code>.</p>
+<pre><code>data: function() {
+    return { eventResult : [] } 
+}</code></pre>
+<p>The root component will hold the state of <code>appointment</code>.</p>
+<pre><code>const CLIENT_ID = process.env.VUE_APP_CLIENT_ID; 
+const DISCOVERY_DOCS = [&quot;https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest&quot;];
+const SCOPES = &quot;https://www.googleapis.com/auth/calendar.readonly&quot;;</code></pre>
+<p>The <code>process.env</code> part will be <a href="https://github.com/vuejs/vue-cli/blob/dev/docs/env.md">replaced</a> during build process with the actual client id. A vue component can have <a href="https://vuejs.org/v2/guide/events.html#Method-Event-Handlers">methods</a>, which are accessible in <a href="https://vuejs.org/v2/guide/instance.html#Instance-Lifecycle-Hooks">lifecycle hook functions</a></p>
+<pre><code>gapiLoad: function() {
+  gapi.load('client:auth2', this.initClient)
+}</code></pre>
+<p>will load the client and the oauth part of the google api.</p>
+<p>The <code>initClient</code> function is passed with the credentials.</p>
+<pre><code>initClient: function() {
+  gapi.client.init({
+  clientId: CLIENT_ID,
+  discoveryDocs: DISCOVERY_DOCS,
+  scope: SCOPES
+  }).then(() =&gt; { 
+      gapi.auth2.getAuthInstance().isSignedIn.listen(this.signedIn);
+      // get signed in status on startup
+      this.signedIn(gapi.auth2.getAuthInstance().isSignedIn.get());
+  })
+}</code></pre>
+<p>The <code>signedIn</code> function will load the data from the google api,</p>
+<pre><code>signedIn: function(isSignedIn) {
+    if (isSignedIn) {
+        gapi.client.calendar.events.list({
+          'calendarId': 'primary',
+          'timeMin': (new Date().toISOString(),
+          'showDeleted': false,
+          'singleEvents': true,
+          'maxResults': 10,
+          'orderBy': 'startTime'
+        }).then((response) =&gt; {
+          this.eventResult = response.result.items;
+        })  
+    } else {
+        this.eventResult = []; 
+    }
+} </code></pre>
+<p>and stores the result in <code>eventResult</code>.</p>
+<p>These functions will be triggered after the component is <a href="https://vuejs.org/v2/api/#mounted">mounted</a>.</p>
+<pre><code>mounted: function() {
+  this.gapiLoad();
+}</code></pre>
+<p>At this point the data will be fetched, if the user gives the permission to load data from his primary calendar.</p>
+<h1 id="display-component">Display component</h1>
+<p>The data for the component will be delivered via <a href="https://vuejs.org/v2/guide/components.html#Props">props</a>. The component it self will be stateless. This means, the component depends only on the props, delivered on start up. When the underlying data changes, the view will rerender.</p>
+<p>For the visual, I use <a href="https://vuematerial.io">vue material</a>. The display component will be a simple table with some data from the <a href="https://developers.google.com/google-apps/calendar/v3/reference/events/list">response</a>. For displaying dates, I use <a href="https://momentjs.com">momentjs</a>. I first create a method, to make <code>momentjs</code> accessible within the template.</p>
+<pre><code>methods: {
+  moment: function () {
+    return moment();
+  }
+}</code></pre>
+<p>To reduce the amount of code within the templates, <a href="https://vuejs.org/v2/guide/filters.html#ad">filters</a> can be used.</p>
+<pre><code>filters: {
+  moment: function (date) {
+    if (date) {
+      return moment(date).locale('en').format('lll');
+    }
+    return '';
+  }
+}</code></pre>
+<p><code>moment</code> will be called, only when <code>date</code> is not empty.</p>
+<p>The resulting template looks like</p>
+<pre><code>&lt;template&gt;
+  &lt;div&gt;
+    &lt;md-table v-model=&quot;gridData&quot; md-card&gt;
+      &lt;md-table-toolbar&gt;
+        &lt;h1 class=&quot;md-title&quot;&gt;Events&lt;/h1&gt;
+      &lt;/md-table-toolbar&gt;
+
+      &lt;md-table-row slot=&quot;md-table-row&quot; slot-scope=&quot;{ item }&quot;&gt;
+        &lt;md-table-cell md-label=&quot;Start&quot;&gt;{{ item.start.dateTime | moment }}&lt;/md-table-cell&gt;
+        &lt;md-table-cell md-label=&quot;End&quot;&gt;{{ item.end.dateTime | moment }}&lt;/md-table-cell&gt;
+        &lt;md-table-cell md-label=&quot;Created&quot;&gt;{{ item.created | moment }}&lt;/md-table-cell&gt;
+        &lt;md-table-cell md-label=&quot;Summary&quot;&gt;&lt;a :href=&quot;item.htmlLink&quot; target=&quot;_blank&quot;&gt;{{ item.summary }}&lt;/a&gt;&lt;/md-table-cell&gt;
+        &lt;md-table-cell md-label=&quot;Creator&quot;&gt;{{ item.creator.displayName }}&lt;/md-table-cell&gt;
+        &lt;md-table-cell md-label=&quot;Organizer&quot;&gt;{{ item.organizer.displayName }}&lt;/md-table-cell&gt;
+     &lt;/md-table-row&gt;
+    &lt;/md-table&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+<p>If you like you can test the <a href="../example/vue/index.html">result</a>.</p>
+
+        </div>
+        <div id="footer"> 
+            created by Jan Frederik Hake | 
+            <a href="https://enter-haken.github.io/atom.xml">atom feed</a> | 
+            generated by <a href="http://jaspervdj.be/hakyll">Hakyll</a> | 
+            <a href="https://github.com/enter-haken/blog">blog source</a> |
+            the source code on this site is covered by a <a href="../license.html">MIT license</a> | 
+            <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons Lizenzvertrag" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a>
+        </div>
+    </body>
+</html>

@@ -38,7 +38,7 @@
 <pre><code>syntax on</code></pre>
 <p>Depending on the file extension or file type, the syntax is highlighted if possible. This option is very use full for coding, and works for several languages.</p>
 <pre><code>set autoindent</code></pre>
-<p>When this option is enabled, every time you hit <code>&lt;enter&gt;</code> in <em>edit mode</em>, you get the same indention as the line above. This is quite useful, when you’re writing codeblocks, especially when you’re coding in a language with indention as a semantic meaning like python.</p>
+<p>When this option is enabled, every time you hit <code>&lt;enter&gt;</code> in <em>edit mode</em>, you get the same indention as the line above. This is quite useful, when you’re writing code blocks, especially when you’re coding in a language with indention as a semantic meaning like python.</p>
 <h1 id="plugins">plugins</h1>
 <p>One of the common plugin managers for Vim is called <a href="https://github.com/VundleVim/Vundle.vim">Vundle</a>, which is short for <em>Vim bundle</em>. It helps tracking plugin changes and offers convenience functions for adding, updating and deleting bundles.</p>
 <p>A minimal <code>.vimrc</code> integration looks like</p>
@@ -68,7 +68,7 @@ filetype plugin indent on</code></pre>
 <p><a href="https://github.com/vim-airline/vim-airline">vim-airline</a> gives you a quit fast status- and tab line.</p>
 <pre><code>Plugin 'bling/vim-airline'</code></pre>
 <h1 id="misc">misc</h1>
-<p>This are some vim hints, which are helpfull from time to time.</p>
+<p>This are some vim hints, which are helpful from time to time.</p>
 <h2 id="pretty-print-xml-on-a-windows-machine">pretty print xml on a windows machine</h2>
 <p>If you want to pretty print a xml file on a windows machine, you need a running version of <code>libxml</code>. Therefore you need the following files from the <a href="http://xmlsoft.org/sources/win32/">libxml project downloads</a>.</p>
 <ul>
@@ -76,10 +76,21 @@ filetype plugin indent on</code></pre>
 <li><a href="http://xmlsoft.org/sources/win32/iconv-1.9.2.win32.zip">iConv</a></li>
 <li><a href="http://xmlsoft.org/sources/win32/zlib-1.2.5.win32.zip">zLib</a></li>
 </ul>
-<p>The binary folders should be added to the system path, so <code>xmllint.exe</code> is accessable from command line.</p>
+<p>The binary folders should be added to the system path, so <code>xmllint.exe</code> is accessible from command line.</p>
 <p>If you want to pretty print a xml in a open buffer you can execute</p>
 <pre><code>:% !xmllint.exe &quot;%&quot; --format</code></pre>
 <p>The current open buffer is replaced with the result of <code>xmllint.exe</code>.</p>
+<h2 id="ctags">ctags</h2>
+<p>You can tag your sources using <a href="http://ctags.sourceforge.net/">ctags</a>. This is a very helpful tool, when you are working on huge codebases.</p>
+<p>First of all you have to build up the tag file in the root of your application with</p>
+<pre><code>ctags -R .</code></pre>
+<p>After starting vim you can use</p>
+<pre><code>:tag whatever</code></pre>
+<p>to search your application and browse to the occurrences with</p>
+<pre><code>:ts</code></pre>
+<p><code>ctags</code> is very helpful in combination with <code>CtrlP</code>.</p>
+<pre><code>:CtrlPTag</code></pre>
+<p>will use the generated <code>tags</code> file for navigation through the sources. For further reading Andrew Stewards <a href="https://andrew.stwrt.ca/posts/vim-ctags/">blog post</a> will give you more information.</p>
 
         </div>
         <div id="footer"> 

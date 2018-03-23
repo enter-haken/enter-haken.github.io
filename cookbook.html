@@ -255,6 +255,19 @@ iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex</code></pre>
 Sat Apr 15 13:12:00 CEST 2017</code></pre>
 <h2 id="xclip">xclip</h2>
 <pre><code>cat id_rsa.pub | xclip -selection clipboard</code></pre>
+<h2 id="gcalcli">gcalcli</h2>
+<p>Working with the Google calendar on console</p>
+<p>put a <code>.gcalclirc</code> in users home directory</p>
+<pre><code>--client_id=&lt;client_id&gt;
+--client_secret=&lt;client-secret&gt;
+--locale=de_DE.utf8
+--defaultCalendar=&lt;calendar name&gt;</code></pre>
+<p>Set up some convenient aliases</p>
+<pre><code>alias week=&quot;gcalcli calw&quot;
+alias month=&quot;gcalcli calm&quot;
+alias todo=&quot;gcalcli agenda&quot;</code></pre>
+<p>Get the next three weeks</p>
+<pre><code>week 3</code></pre>
         </div>
         <div id="footer"> 
             created by Jan Frederik Hake | 

@@ -237,7 +237,7 @@
 <p>As you can see the database take a place in the middle.</p>
 <p>As mentioned in the <a href="../posts/2017-08-07-database-architecture-part3.html">database architecture series</a> the <code>web backend</code> can put a request in the database <code>transfer</code> table. This is the only table, which can be accessed by the <code>web backend</code>. After a request is processed, the result is put back into the <code>transfer</code> entity. The database sends a <a href="https://www.postgresql.org/docs/current/static/sql-notify.html">notification</a> to the <code>web backend</code>, which can pull the response from the database. This represents a very thin interface to database. This approach leads to less security issues, because more database related functions are hidden from the <code>web backend</code>.</p>
 <h1 id="the-database">The database</h1>
-<p>Every application’s heard is it’s database. <code>rasmus</code> is no exception. An <code>rasmus</code> application has it’s own schema within the database. The schemes look as following.</p>
+<p>Every application’s heart is it’s database. <code>rasmus</code> is no exception. An <code>rasmus</code> application has it’s own schema within the database. The schemes look as following.</p>
 <h2 id="the-core">The core</h2>
 <p>The different <code>rasmus</code> applications share a <code>core</code>. Here you can find functions, used across all applications, like user and role management.</p>
 <p>First start with a simple user / role management approach.</p>

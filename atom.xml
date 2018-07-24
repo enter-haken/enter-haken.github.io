@@ -8,8 +8,120 @@
         <name>Jan Frederik Hake</name>
         <email>jan_hake@gmx.de</email>
     </author>
-    <updated>2018-03-08T00:00:00Z</updated>
+    <updated>2018-07-23T00:00:00Z</updated>
     <entry>
+    <title>connect the dots</title>
+    <link href="https://enter-haken.github.io/posts/2018-07-23-rasmus-part2.html" />
+    <id>https://enter-haken.github.io/posts/2018-07-23-rasmus-part2.html</id>
+    <published>2018-07-23T00:00:00Z</published>
+    <updated>2018-07-23T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>A few months ago, I <a href="/posts/2018-02-19-rasmus.html">started a little project</a> named <a href="https://github.com/enter-haken/rasmus">rasmus</a>. It was my plan, to build a competitive CMS, which I can be proud of. During the work on <code>rasmus</code>, I gather a lot of different information. I stored some of them as bookmarks. Weeks later, I stared on my bookmarks, which I’ve partly stored over the years and tried to remember, why I saved these links. Some of the links were so old, that the presented information has become obsolete. I noticed, that the context is missing.</p>
+<p>The question is, how to save the context? I took a step back, and started to work on a possible solution for that problem.</p>
+<p>On some links, I could remember how I came up with it. I found the missing links via Google and started painting a map. As a result, I got a graph with links as <code>nodes</code> and the context as <code>edges</code>.</p>
+<!--more-->
+<h1 id="architecture">architecture</h1>
+<p>The architecture for <code>rasmus</code> looks like</p>
+<div class="figure">
+<img src="/images/rasmus_concept.png" />
+
+</div>
+<p>The heart of <code>rasmus</code> is its PostgreSQL database. <code>ramsus</code> uses the idea of the <a href="/posts/2017-08-07-database-architecture-part3.html">database gate keeper</a>. Data transformation happens within the database, as long no business logic is required.</p>
+<div class="figure">
+<img src="/images/rasmus_information_flow.png" />
+
+</div>
+<h1 id="backend">backend</h1>
+<p>Because of the event driven approach and the desired robustness, I choose <a href="https://elixir-lang.org/">elixir</a> as a backend language. I don’t expect massive number crunching, so I take the road with the Erlang VM.</p>
+<p>A famous web framework in the elixir universe is the <a href="https://phoenixframework.org/">phoenix framework</a>. There is a lot of boiler plate and <a href="https://hexdocs.pm/mix/Mix.html">mix</a> tasks involved, so I bootstrap the backend for now and add what is needed.</p>
+<p>Phoenix uses <a href="https://ninenines.eu/">cowboy</a> as a web server and so do I. With some suitable <a href="https://hexdocs.pm/plug/readme.html">plugs</a> the configuration is a no brainer.</p>
+<p>Within the <a href="https://hexdocs.pm/elixir/Application.html">application behaviour</a> you can define the web server as a child process.</p>
+<pre><code>Plug.Adapters.Cowboy2, scheme: :http, plug: Web.Router, options: [port: 8080]</code></pre>
+<p>The <code>Web.Router</code> process uses the <a href="https://hexdocs.pm/plug/Plug.Router.html">router plug</a>. You can define the web endpoints of the application here.</p>
+<p>There a two ways to access the database</p>
+<h2 id="pub-sub-database-access">pub sub database access</h2>
+<p>When you want to listen to <a href="https://www.postgresql.org/docs/current/static/sql-notify.html">Postgres notifications</a>, you need to open a channel to the database.</p>
+<p>A <a href="https://hexdocs.pm/elixir/GenServer.html">GenServer</a> can look like</p>
+<pre><code>defmodule Core.Counter do
+  use GenServer
+
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: :listener)
+  end
+
+  def init(pg_config) do
+    {:ok, pid} = Postgrex.Notifications.start_link(pg_config)
+    {:ok, ref} = Postgrex.Notifications.listen(pid, &quot;rasmus&quot;)
+
+    {:ok, {pid, ref }}
+  end
+
+  def handle_info({:notification, pid, ref, &quot;rasmus&quot;, payload},_) do
+    case Jason.decode(payload) do
+     {:ok , %{ &quot;id&quot; =&gt; id, &quot;state&quot; =&gt; &quot;pending&quot;, }} -&gt; Core.Manager.perform(id)
+
+     # additional pattern matches
+
+     _ -&gt; Logger.warn(&quot;got unhandled notification: #{inspect(payload)}&quot;)
+    end
+    {:noreply, {pid, ref}}
+  end
+
+  def handle_info(_, state) do
+    Logger.warn(&quot;unhandled info: #{inspect(state)}&quot;)
+    {:noreply, state}
+  end
+end</code></pre>
+<p>The notification pattern</p>
+<pre><code>{:notification, connection_pid, ref, channel, payload}</code></pre>
+<p>can be matched in <code>handle_info/2</code> function, which is defined in the <a href="https://hexdocs.pm/elixir/GenServer.html#c:handle_info/2">GenServer behaviour</a>.</p>
+<h2 id="simple-database-access">simple database access</h2>
+<p>If you want to access the <code>transfer</code> table of the database, the module looks a little bit different.</p>
+<pre><code>defmodule Core.Inbound do
+  use GenServer
+
+  # genserver functions
+
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: :inbound_worker)
+  end
+
+  def init(pg_config) do
+    {:ok, pid} = Postgrex.start_link(pg_config)
+    Logger.info(&quot;#{__MODULE__} started.&quot;)
+
+    {:ok, pid}
+  end
+
+  def handle_cast({:add, payload}, state) do
+    case Postgrex.query(state, &quot;INSERT INTO rasmus.transfer (request) VALUES ($1)&quot;, [payload]) do
+      {:ok, result} -&gt; Logger.debug(&quot;added into transfer: #{inspect(result)}&quot;)
+      {:error, error} -&gt; Logger.error(&quot;adding into transfer failed: #{inspect(error)}. Tried to add #{inspect(payload)}&quot;)
+    end
+    {:noreply, state }
+  end
+
+  def handle_info(_, state) do
+    Logger.warn(&quot;unhandled info: #{inspect(state)}&quot;)
+    {:noreply, state}
+  end
+end</code></pre>
+<p>First you define the <code>GenServer</code> callbacks. When you want to use them, you have to send messages to the process.</p>
+<pre><code>def add(entity) do
+  GenServer.cast(:inbound_worker, {:add, entity})
+end</code></pre>
+<p>You don’t expect an answer for your add function. When the database is ready, it sends a notification to the listener, that the requested task is done, and that you can fetch the result, if it is wished.</p>
+<h1 id="client">client</h1>
+<p>The client is responsible for drawing the graph. The library <a href="http://visjs.org/">visjs</a> provides functions for drawing graphs on a canvas element. Drawing graphs is not a trivial thing, so this is the best fit for now.</p>
+<p>All other user interaction will be done with a UI library. <a href="https://material-ui.com/">material-ui</a> is a mature UI library based on react. Having a react based application, <a href="https://github.com/facebook/create-react-app">create-react-app</a> will give you a good toolchain.</p>
+<h1 id="example">example</h1>
+<p>Coming back to the bookmark context problem, I have described some parts of <code>rasmus</code> as links to github.</p>
+<div class="figure">
+<img src="/images/rasmus_frontend.png" />
+
+</div>
+<p>This is just a first throw. If you like the idea, you can test a static <a href="/example/rasmus/alpha/index.html">alpha version</a> of the frontend, to make yourself a picture.</p>]]></summary>
+</entry>
+<entry>
     <title>get in touch with vue</title>
     <link href="https://enter-haken.github.io/posts/2018-03-08-vue.html" />
     <id>https://enter-haken.github.io/posts/2018-03-08-vue.html</id>
@@ -3292,184 +3404,6 @@ svg :: String -&gt; String
 svg contents = unsafePerformIO $ readProcess &quot;dot&quot; [&quot;-Tsvg&quot;] contents</code></pre>
 <p>This code transforms a markdown document into html and converts all codeblocks with a <code>lang</code> tag into a svg version of the given graph. At this point, I don’t use the value of <code>lang</code>. It is possible to implement a different behaviour for other tags or different values.</p>
 <p>See the <a href="/example/pandoc/dotlang/index.html">result</a> or check out the <a href="https://github.com/enter-haken/hakyll-dot-demo">code</a>, if you like it.</p>]]></summary>
-</entry>
-<entry>
-    <title>get in touch with react</title>
-    <link href="https://enter-haken.github.io/posts/2017-01-02-fist-steps-with-react.html" />
-    <id>https://enter-haken.github.io/posts/2017-01-02-fist-steps-with-react.html</id>
-    <published>2017-01-02T00:00:00Z</published>
-    <updated>2017-01-02T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Last year I started a little web project for work. After probing some frameworks, I started with <a href="https://facebook.github.io/react/">react</a>. I must say, the tooling around the framework is quite sophisticated.</p>
-<p>First of all, <a href="https://www.npmjs.com/">npm</a> is needed for the build tool chain. Via <code>npm install create-react-app -g</code> you’ve got a good point to start. It installs the <a href="https://github.com/facebookincubator/create-react-app">tool chain</a>, needed for creating a development environment.</p>
-<!--more-->
-<p>Let us take a simple Blog engine as an example. You can setup a new react project with <code>create-react-app Blog</code>. This command creates a new folder named <code>Blog</code> and installs a bunch of tools in the project directory.</p>
-<p>With <code>npm start</code> you can take a first look of the generated result. It should look like</p>
-<div class="figure">
-<img src="/images/react-scaffolded-app.png" />
-
-</div>
-<pre><code>Compiled successfully!
-
-The app is running at:
-
-  http://localhost:3000/
-
-Note that the development build is not optimized.
-To create a production build, use npm run build.</code></pre>
-<p>The development server is up and running. At every time you can make a production build with <code>npm run build</code>. The first build size is with 152kb rather small.</p>
-<p>After deleting some unused files you have left an <code>index.html</code> as a starting point for our application.</p>
-<pre><code>&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-  &lt;head&gt;
-    &lt;meta charset=&quot;utf-8&quot;&gt;
-    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-    &lt;link rel=&quot;shortcut icon&quot; href=&quot;%PUBLIC_URL%/favicon.ico&quot;&gt;
-    &lt;title&gt;React App&lt;/title&gt;
-  &lt;/head&gt;
-  &lt;body&gt;
-    &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
- &lt;/body&gt;
-&lt;/html&gt;</code></pre>
-<p>The corresponding <code>index.js</code> looks like</p>
-<pre><code>import React from &#39;react&#39;;
-import ReactDOM from &#39;react-dom&#39;;
-import App from &#39;./App&#39;;
-
-ReactDOM.render(
-  &lt;App /&gt;,
-  document.getElementById(&#39;root&#39;)
-);</code></pre>
-<p>and the <code>App.js</code> like</p>
-<pre><code>import React, { Component } from &#39;react&#39;;
-
-class App extends Component {
-  render() {
-    return (
-      &lt;div className=&quot;App&quot;&gt;
-        Test
-      &lt;/div&gt;
-    );
-  }
-}
-
-export default App;</code></pre>
-<p>The existence of <code>index.html</code> and <code>index.js</code> is mandatory for the build process. Everything else can be changed.</p>
-<p>If you are wondering about the weird syntax in the render methods, let me assure you, everything is all right. This is called <a href="https://facebook.github.io/react/docs/introducing-jsx.html">JSX</a> and it is a JavaScript syntax extension. If you like to see, what is JSX in depth, there are some good <a href="https://facebook.github.io/react/docs/jsx-in-depth.html">examples</a> as part of the documentation.</p>
-<p>If you are new to ECMAScript &gt;6, look at the <a href="http://es6-features.org/">new features</a>. React uses a lot of them, especially classes, expression bodies and block scoped variables.</p>
-<p>We don’t want to code our own CSS framework for our blog engine. There are several possibilities available on the market. Google’s <a href="https://material.io/guidelines/">material design</a> is available for a while. It exists a project, which combines react components with the material design. It is called <a href="http://www.material-ui.com/">material ui</a>.</p>
-<p>We are going to use a few components for our blog application. For a working app, material ui requires a theme. Therefore the <code>index.js</code> must be <a href="http://www.material-ui.com/#/get-started/usage">adjusted</a>.</p>
-<pre><code>import React from &#39;react&#39;;
-import ReactDOM from &#39;react-dom&#39;;
-import MuiThemeProvider from &#39;material-ui/styles/MuiThemeProvider&#39;;
-
-import App from &#39;./App&#39;;
-
-ReactDOM.render(
-  &lt;MuiThemeProvider&gt;
-    &lt;App /&gt;
-  &lt;/MuiThemeProvider&gt;,
-  document.getElementById(&#39;root&#39;)
-);</code></pre>
-<p>Now we can use the material ui components.</p>
-<p>But first, we need some data. For scaffolding, we can use simple json files. Later on, they can be replaced by an api.</p>
-<pre><code>{
-    &quot;data&quot;: [{
-        &quot;Id&quot;: 1,
-        &quot;Title&quot;: &quot;Test 1 MainTitle&quot;,
-        &quot;SubTitle&quot;: &quot;Test 1 Subtitle&quot;,
-        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
-    },{
-        &quot;Id&quot;: 2,
-        &quot;Title&quot;: &quot;Test 2 MainTitle&quot;,
-        &quot;SubTitle&quot;: &quot;Test 2 Subtitle&quot;,
-        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
-    },{
-        &quot;Id&quot;: 3,
-        &quot;Title&quot;: &quot;Test 3 MainTitle&quot;,
-        &quot;SubTitle&quot;: &quot;Test 3 Subtitle&quot;,
-        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
-    },{
-        &quot;Id&quot;: 4,
-        &quot;Title&quot;: &quot;Test 4 MainTitle&quot;,
-        &quot;SubTitle&quot;: &quot;Test 4 Subtitle&quot;,
-        &quot;Text&quot;: &quot;Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.&quot;
-    }]
-}</code></pre>
-<p>A blog entry can be viewed with a <a href="http://www.material-ui.com/#/components/card">card</a>.</p>
-<p>Every component is either statefull or pure. A statefull component can change after render. A pure component depends only on it’s properties. These properties are filled on creation, so pure components are kind of immutable.</p>
-<p>As you design your application you must decide which component should hold the state. For this example I made a pure component <code>BlogPost</code></p>
-<pre><code>import React, {
-    Component
-} from &#39;react&#39;;
-
-import {
-    Card,
-    CardHeader,
-    CardText
-} from &#39;material-ui/Card&#39;;
-
-class BlogPost extends Component {
-    render() {
-      return &lt;Card expanded={true} style={{ marginBottom : &#39;10px&#39; }}&gt;
-                &lt;CardHeader
-                    title={this.props.title}
-                    subtitle={this.props.subTitle}
-                /&gt;
-                &lt;CardText&gt;
-                    {this.props.text} 
-                &lt;/CardText&gt;
-              &lt;/Card&gt;
-    }
-}
-
-export default BlogPost;</code></pre>
-<p>This component will only render property data.</p>
-<pre><code>&lt;BlogPost title=&quot;test&quot; subTitle=&quot;test sub&quot; text=&quot;lorem ipsum&quot; /&gt;</code></pre>
-<p>will be rendered to</p>
-<div class="figure">
-<img src="/images/card-blog-test.png" />
-
-</div>
-<p>How do we get our json blog data into our application. For our small example, we extend our <code>App.js</code> to a statefull component. The data will be loaded after application start.</p>
-<p>A good place for this is the <a href="https://facebook.github.io/react/docs/react-component.html#componentdidmount">componentDidMount</a> function. Changes on state will cause a rerender of the affected dom elements. We will override this method with.</p>
-<pre><code>componentDidMount(){
-  fetch(&#39;./blogPosts.json&#39;)
-    .then((response) =&gt; {
-      return response.json();
-    })
-    .then((response) =&gt; {
-      this.setState({ blogPosts : response.data});
-    })
-}</code></pre>
-<p>After the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch">fetch</a> the state will have an array <code>state.blogPosts</code>, which contains all the blog data. For the first posts, this solution will be good enough, but this part is a good candidate for later refactor.</p>
-<p>To ensure the <code>state.blogPosts</code> Array exists, it should be initialized in the constructor.</p>
-<pre><code>constructor(props){
-  super(props);
-  this.state = {
-      blogPosts : []
-  };
-}</code></pre>
-<p>To render the json data, we must rewrite the <code>render</code> method of our <code>App.js</code> to use the state data.</p>
-<pre><code>render() {
-  const posts = this.state.blogPosts.map((post) =&gt; {
-      return &lt;BlogPost 
-          key={post.Id} 
-          title={post.Title} 
-          subTitle={post.SubTitle} 
-          text={post.Text} /&gt;
-  });
-
-  return &lt;div className=&quot;App&quot;&gt;
-            { posts }
-         &lt;/div&gt;
-}</code></pre>
-<p>The <code>state.blogPosts</code> must be mapped to react components. Due to the JSX extensions, the <code>BlogPost</code> Component can be returned by a simple function. The key property is necessary for react, to identify the dom element, to be rendered on change.</p>
-<p>After fetching the data the <code>App.js</code> will look like</p>
-<div class="figure">
-<img src="/images/card-blog-example.png" />
-
-</div>
-<p>Our <a href="/example/react/blog/v1/index.html">v1</a> can display blog data coming from a server (json file). For a <a href="/posts/2016-03-25-mvp.html">skateboard</a> this is ok for now. You can review the source on <a href="https://github.com/enter-haken/reactBlogExample">Github</a></p>]]></summary>
 </entry>
 
 </feed>

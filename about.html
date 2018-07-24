@@ -69,6 +69,9 @@ Bergstraße 39
 </p>
 <script>
     function optOut() {
+        var gaProperty = 'UA-109218061-1';
+        var disableString = 'ga-disable-' + gaProperty;
+ 
         document.cookie = disableString + '=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
         window[disableString] = true;
         alert('Google Analytics has been deactivated');

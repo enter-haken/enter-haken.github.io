@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>enter_haken - connect the dots</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109218061-1"></script>
+        <script>
+          var gaProperty = 'UA-109218061-1';
+          var disableString = 'ga-disable-' + gaProperty;
+       
+          if (document.cookie.indexOf(disableString + '=true') > -1) {
+              window[disableString] = true;
+          }
+ 
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', gaProperty, { 'anonymize_ip' : true });
+        </script>
+    </head>
+    <body>
+        <div id="header">
+            <div id="navigation">
+                <a href="../">enter_haken</a>
+                <a href="../projects.html">projects</a>
+                <a href="../cookbook.html">cookbook</a>
+                <a href="../notes.html">notes</a>
+                <a href="../read.html">read</a>
+                <a href="../about.html">about</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>connect the dots</h1>
+
+<div class="info">
+    
+    Posted on July 23, 2018
+    
+        
+</div>
+
+<p>A few months ago, I <a href="../posts/2018-02-19-rasmus.html">started a little project</a> named <a href="https://github.com/enter-haken/rasmus">rasmus</a>. It was my plan, to build a competitive CMS, which I can be proud of. During the work on <code>rasmus</code>, I gather a lot of different information. I stored some of them as bookmarks. Weeks later, I stared on my bookmarks, which I’ve partly stored over the years and tried to remember, why I saved these links. Some of the links were so old, that the presented information has become obsolete. I noticed, that the context is missing.</p>
+<p>The question is, how to save the context? I took a step back, and started to work on a possible solution for that problem.</p>
+<p>On some links, I could remember how I came up with it. I found the missing links via Google and started painting a map. As a result, I got a graph with links as <code>nodes</code> and the context as <code>edges</code>.</p>
+<!--more-->
+<h1 id="architecture">architecture</h1>
+<p>The architecture for <code>rasmus</code> looks like</p>
+<div class="figure">
+<img src="../images/rasmus_concept.png" />
+
+</div>
+<p>The heart of <code>rasmus</code> is its PostgreSQL database. <code>ramsus</code> uses the idea of the <a href="../posts/2017-08-07-database-architecture-part3.html">database gate keeper</a>. Data transformation happens within the database, as long no business logic is required.</p>
+<div class="figure">
+<img src="../images/rasmus_information_flow.png" />
+
+</div>
+<h1 id="backend">backend</h1>
+<p>Because of the event driven approach and the desired robustness, I choose <a href="https://elixir-lang.org/">elixir</a> as a backend language. I don’t expect massive number crunching, so I take the road with the Erlang VM.</p>
+<p>A famous web framework in the elixir universe is the <a href="https://phoenixframework.org/">phoenix framework</a>. There is a lot of boiler plate and <a href="https://hexdocs.pm/mix/Mix.html">mix</a> tasks involved, so I bootstrap the backend for now and add what is needed.</p>
+<p>Phoenix uses <a href="https://ninenines.eu/">cowboy</a> as a web server and so do I. With some suitable <a href="https://hexdocs.pm/plug/readme.html">plugs</a> the configuration is a no brainer.</p>
+<p>Within the <a href="https://hexdocs.pm/elixir/Application.html">application behaviour</a> you can define the web server as a child process.</p>
+<pre><code>Plug.Adapters.Cowboy2, scheme: :http, plug: Web.Router, options: [port: 8080]</code></pre>
+<p>The <code>Web.Router</code> process uses the <a href="https://hexdocs.pm/plug/Plug.Router.html">router plug</a>. You can define the web endpoints of the application here.</p>
+<p>There a two ways to access the database</p>
+<h2 id="pub-sub-database-access">pub sub database access</h2>
+<p>When you want to listen to <a href="https://www.postgresql.org/docs/current/static/sql-notify.html">Postgres notifications</a>, you need to open a channel to the database.</p>
+<p>A <a href="https://hexdocs.pm/elixir/GenServer.html">GenServer</a> can look like</p>
+<pre><code>defmodule Core.Counter do
+  use GenServer
+
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: :listener)
+  end
+
+  def init(pg_config) do
+    {:ok, pid} = Postgrex.Notifications.start_link(pg_config)
+    {:ok, ref} = Postgrex.Notifications.listen(pid, &quot;rasmus&quot;)
+
+    {:ok, {pid, ref }}
+  end
+
+  def handle_info({:notification, pid, ref, &quot;rasmus&quot;, payload},_) do
+    case Jason.decode(payload) do
+     {:ok , %{ &quot;id&quot; =&gt; id, &quot;state&quot; =&gt; &quot;pending&quot;, }} -&gt; Core.Manager.perform(id)
+
+     # additional pattern matches
+
+     _ -&gt; Logger.warn(&quot;got unhandled notification: #{inspect(payload)}&quot;)
+    end
+    {:noreply, {pid, ref}}
+  end
+
+  def handle_info(_, state) do
+    Logger.warn(&quot;unhandled info: #{inspect(state)}&quot;)
+    {:noreply, state}
+  end
+end</code></pre>
+<p>The notification pattern</p>
+<pre><code>{:notification, connection_pid, ref, channel, payload}</code></pre>
+<p>can be matched in <code>handle_info/2</code> function, which is defined in the <a href="https://hexdocs.pm/elixir/GenServer.html#c:handle_info/2">GenServer behaviour</a>.</p>
+<h2 id="simple-database-access">simple database access</h2>
+<p>If you want to access the <code>transfer</code> table of the database, the module looks a little bit different.</p>
+<pre><code>defmodule Core.Inbound do
+  use GenServer
+
+  # genserver functions
+
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: :inbound_worker)
+  end
+
+  def init(pg_config) do
+    {:ok, pid} = Postgrex.start_link(pg_config)
+    Logger.info(&quot;#{__MODULE__} started.&quot;)
+
+    {:ok, pid}
+  end
+
+  def handle_cast({:add, payload}, state) do
+    case Postgrex.query(state, &quot;INSERT INTO rasmus.transfer (request) VALUES ($1)&quot;, [payload]) do
+      {:ok, result} -&gt; Logger.debug(&quot;added into transfer: #{inspect(result)}&quot;)
+      {:error, error} -&gt; Logger.error(&quot;adding into transfer failed: #{inspect(error)}. Tried to add #{inspect(payload)}&quot;)
+    end
+    {:noreply, state }
+  end
+
+  def handle_info(_, state) do
+    Logger.warn(&quot;unhandled info: #{inspect(state)}&quot;)
+    {:noreply, state}
+  end
+end</code></pre>
+<p>First you define the <code>GenServer</code> callbacks. When you want to use them, you have to send messages to the process.</p>
+<pre><code>def add(entity) do
+  GenServer.cast(:inbound_worker, {:add, entity})
+end</code></pre>
+<p>You don’t expect an answer for your add function. When the database is ready, it sends a notification to the listener, that the requested task is done, and that you can fetch the result, if it is wished.</p>
+<h1 id="client">client</h1>
+<p>The client is responsible for drawing the graph. The library <a href="http://visjs.org/">visjs</a> provides functions for drawing graphs on a canvas element. Drawing graphs is not a trivial thing, so this is the best fit for now.</p>
+<p>All other user interaction will be done with a UI library. <a href="https://material-ui.com/">material-ui</a> is a mature UI library based on react. Having a react based application, <a href="https://github.com/facebook/create-react-app">create-react-app</a> will give you a good toolchain.</p>
+<h1 id="example">example</h1>
+<p>Coming back to the bookmark context problem, I have described some parts of <code>rasmus</code> as links to github.</p>
+<div class="figure">
+<img src="../images/rasmus_frontend.png" />
+
+</div>
+<p>This is just a first throw. If you like the idea, you can test a static <a href="../example/rasmus/alpha/index.html">alpha version</a> of the frontend, to make yourself a picture.</p>
+
+        </div>
+        <div id="footer"> 
+            created by Jan Frederik Hake | 
+            <a href="https://enter-haken.github.io/atom.xml">atom feed</a> | 
+            generated by <a href="http://jaspervdj.be/hakyll">Hakyll</a> | 
+            <a href="https://github.com/enter-haken/blog">blog source</a> |
+            the source code on this site is covered by a <a href="../license.html">MIT license</a> | 
+            <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons Lizenzvertrag" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a>
+        </div>
+    </body>
+</html>

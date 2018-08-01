@@ -478,7 +478,7 @@ BODY
     url VARCHAR(2048),
     json_view JSONB
 );</code></pre>
-<p>The <code>json_view</code> column is populated, when it is needed for the first time. All necessary function can be found in the <a href="https://github.com/enter-haken/rasmus/blob/master/database_scripts/link.sql">database script</a>.</p>
+<p>The <code>json_view</code> column is populated, when it is needed for the first time. All necessary functions can be found in the <a href="https://github.com/enter-haken/rasmus/blob/master/database_scripts/link.sql">database script</a>.</p>
 <p>Log entries:</p>
 <pre><code>14:38:28.319 module=Plug.Logger [info] POST /api
 14:38:28.319 module=Web.Router [info] Got add for link with %{&quot;description&quot; =&gt; &quot;process configuration&quot;, &quot;id_owner&quot; =&gt; &quot;fed1e016-0730-4d04-b6cd-bdd8da676e76&quot;, &quot;name&quot; =&gt; &quot;otp tree&quot;, &quot;url&quot; =&gt; &quot;https://github.com/enter-haken/rasmus/blob/master/lib/rasmus_app.ex&quot;}

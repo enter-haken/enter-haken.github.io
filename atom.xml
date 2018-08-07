@@ -8,8 +8,36 @@
         <name>Jan Frederik Hake</name>
         <email>jan_hake@gmx.de</email>
     </author>
-    <updated>2018-07-31T00:00:00Z</updated>
+    <updated>2018-08-07T00:00:00Z</updated>
     <entry>
+    <title>time for money, money for time</title>
+    <link href="https://enter-haken.github.io/posts/2018-08-07-time.html" />
+    <id>https://enter-haken.github.io/posts/2018-08-07-time.html</id>
+    <published>2018-08-07T00:00:00Z</published>
+    <updated>2018-08-07T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>I have two kids, 16 and 20 years old. My third child will see the light of the world in December this year. My oldest boy currently took a year of, went to Japan and currently lives Australia. He ask me, what to do after graduate school. I told him, to find a job, which is currently complicated for robots to take off. My youngest girl still has three years in school, but she is also thinking about the time after graduation.</p>
+<p>As they think about their future, I think about what kind of world I will leave for them.</p>
+<p>Every being has a limited amount of time on this planet. <code>Time</code> is the true <code>currency</code>, we have in our lives. As we think of <code>currency</code> we often hear the sentence.</p>
+<pre><code>Time is money.</code></pre>
+<p>I think the opposite is also true.</p>
+<pre><code>Money is time.</code></pre>
+<p>Let’s take a few thoughts.</p>
+<!--more-->
+<p>In the first days of humanity, a human bridges long distances by foot. Formerly we used horse-drawn carriages, later on cars, trains and planes. We became comfortable over the time.</p>
+<p>I sold my car in 2002. Since then, I used public transport and my bicycle. In 2016, I bought a navigation device, which recorded my kilometers over time. I cycled about 6800 kilometers since recording.</p>
+<p>In my thoughts, being physical active, means more <code>time</code> on this planet for me. A human body should be in motion as much as possible, so that the body is healthy till the old age. Of course, a motorist can also get old, but the quality of live is greater in a healthy body.</p>
+<p>So what I did in fact is to spend <code>money</code> on a bicycle and get <code>time</code> in the end.</p>
+<p>Until the <a href="https://en.wikipedia.org/wiki/Life_in_Great_Britain_during_the_Industrial_Revolution">beginning of the 20th century</a>, work is still hard. The mortality rate has decreased but is still at a high rate. Labour unions have helped to shape working life as we know it today. But how does the working live looks like in a few decades?</p>
+<p>In the industrialized world, many workers have a 40 hours week with a weekend off. They change <code>time</code> for <code>money</code>. They use this <code>money</code> for their daily live. They pay their rent, buy their food, pay for child care or going on vacation. At the end of the day there is some <code>money</code> left, to save for bad times. After a hard working live you get your well-erned pension.</p>
+<p>This is how it works today, but the world is in motion.</p>
+<p>The automation rate grows at an exponential growth. There is less work for the whole population. Less workers means less people who funds the current pensions. So, who buys all the stuff, which the companies are producing? If the automation rate grows at the current rate, this will become a social problem. The richer are becoming richer, and the poorer are becoming poorer. The middle class is shrinking and it is a matter of time, until the system will collapse.</p>
+<p>Today I pay into the pension fund. My father and other pensioners get paid from it. I doubt, that this will work for me, when I come into the pensioners age, although my children and other people children will pay into it. How can I tell my children, they will have a good live, when I doubt so? How can I change my <code>money</code> back into <code>time</code>? What needs to be changed so that my children have a future again?</p>
+<p>Becoming rich isn’t a solution, because the system will collapse at some time. Working all day long will let your body collapse at some point.</p>
+<p>What is a fair exchange for <code>money</code> and <code>time</code>? What is fair for descendants?</p>
+<p>I think it’s a global problem, so there has to be a global solution. As it is often so, there exists more than one solution.</p>
+<p>What will be yours?</p>]]></summary>
+</entry>
+<entry>
     <title>first steps with rasmus</title>
     <link href="https://enter-haken.github.io/posts/2018-07-31-rasmus-part3.html" />
     <id>https://enter-haken.github.io/posts/2018-07-31-rasmus-part3.html</id>
@@ -3664,230 +3692,6 @@ $$ LANGUAGE plpgsql;</code></pre>
 }</code></pre>
 <p>Every time the <code>update_json_view_person</code> function is called, the <code>json_view</code> column is updated with the current relational data.</p>
 <p>In the <a href="2017-07-15-database-architecture-part2.html">next part</a>, I take a look at some other use cases.</p>]]></summary>
-</entry>
-<entry>
-    <title>providing test data for databases</title>
-    <link href="https://enter-haken.github.io/posts/2017-06-28-testdata.html" />
-    <id>https://enter-haken.github.io/posts/2017-06-28-testdata.html</id>
-    <published>2017-06-28T00:00:00Z</published>
-    <updated>2017-06-28T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>A few days ago, I did some experiments with PostgreSQL JSONB columns. A used a simple person model for my tests, containing address data for a person.</p>
-<p>For my tests, I needed some test data. I could have generated some random strings, but I wanted to fill the database with more realistic data. I have often thought of a test data generator for commonly used data models. If you want to generate randomized addresses for a person, you need a big list of street names and city names. When it comes to geographical data like this, <a href="https://www.openstreetmap.org">open street maps</a> comes into the game.</p>
-<!--more-->
-<p>Because I live in North rhine westphalia, I use <a href="http://download.geofabrik.de/europe/germany/nordrhein-westfalen.html">local data</a> from the German <a href="https://www.openstreetmap.org">open street map</a> provider <a href="http://www.geofabrik.de/">geofabrik</a>. At the time of writing the pbf data is about 647 MB in size. This file contains all cities, highways, residential data, rail ways and so on. I only need a fraction of this. The osm community has build a tool called <a href="http://wiki.openstreetmap.org/wiki/Osmosis">osmosis</a> for this. With osmosis you can filter the data and save the result in a XML file.</p>
-<h1 id="cities">Cities</h1>
-<pre><code>$ osmosis --read-pbf nordrhein-westfalen-latest.osm.pbf \
-&gt; --tf accept-nodes place=city,town,village,hamlet,suburb \
-&gt; --tf reject-relations \
-&gt; --tf reject-ways \
-&gt; --write-xml nrw-cities.osm
-Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Osmosis Version 0.40.1
-Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Preparing pipeline.
-Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Launching pipeline execution.
-Jun 28, 2017 07:44:09 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Pipeline executing, waiting for completion.
-Jun 28, 2017 07:44:53 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Pipeline complete.
-Jun 28, 2017 07:44:53 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Total execution time: 44140 milliseconds.</code></pre>
-<p>As a result, you get a 3MB xml file. The file contains all nodes with a <a href="http://wiki.openstreetmap.org/wiki/Key:place">place tag</a>, containing either <code>city</code>, <code>town</code>, <code>village</code>, <code>hamlet</code> or <code>suburb</code>. These tags has usually have a <a href="http://wiki.openstreetmap.org/wiki/Key:name">name tag</a>.</p>
-<p>The city Dortmund looks like</p>
-<pre><code>&lt;node id=&quot;25293125&quot; version=&quot;33&quot; timestamp=&quot;2017-05-08T12:12:08Z&quot; uid=&quot;5706452&quot; user=&quot;Bienson&quot; changeset=&quot;48500235&quot; lat=&quot;51.5142273&quot; lon=&quot;7.4652789&quot;&gt;
-  &lt;tag k=&quot;ele&quot; v=&quot;86&quot;/&gt;
-  &lt;tag k=&quot;is_in&quot; v=&quot;Regierungsbezirk Arnsberg,Nordrhein-Westfalen,Bundesrepublik Deutschland,Europe&quot;/&gt;
-  &lt;tag k=&quot;is_in:country_code&quot; v=&quot;DE&quot;/&gt;
-  &lt;tag k=&quot;is_in:iso_3166_2&quot; v=&quot;DE-NW&quot;/&gt;
-  &lt;tag k=&quot;name&quot; v=&quot;Dortmund&quot;/&gt;
-  &lt;tag k=&quot;name:de&quot; v=&quot;Dortmund&quot;/&gt;
-  &lt;tag k=&quot;name:hu&quot; v=&quot;Dortmund&quot;/&gt;
-  ...
-  &lt;tag k=&quot;openGeoDB:community_identification_number&quot; v=&quot;05913&quot;/&gt;
-  &lt;tag k=&quot;openGeoDB:is_in_loc_id&quot; v=&quot;179&quot;/&gt;
-  &lt;tag k=&quot;openGeoDB:layer&quot; v=&quot;5&quot;/&gt;
-  &lt;tag k=&quot;openGeoDB:license_plate_code&quot; v=&quot;DO&quot;/&gt;
-  &lt;tag k=&quot;openGeoDB:loc_id&quot; v=&quot;404&quot;/&gt;
-  &lt;tag k=&quot;place&quot; v=&quot;city&quot;/&gt;
-  &lt;tag k=&quot;place:importance&quot; v=&quot;2&quot;/&gt;
-  &lt;tag k=&quot;population&quot; v=&quot;600933&quot;/&gt;
-  &lt;tag k=&quot;ref:LOCODE&quot; v=&quot;DEDTM&quot;/&gt;
-  &lt;tag k=&quot;website&quot; v=&quot;http://www.dortmund.de&quot;/&gt;
-  &lt;tag k=&quot;wikidata&quot; v=&quot;Q1295&quot;/&gt;
-  &lt;tag k=&quot;wikipedia&quot; v=&quot;de:Dortmund&quot;/&gt;
-&lt;/node&gt;</code></pre>
-<p>At this point you can decide either to use a xml library for extracting the name tag, or to use the Linux system tools. I start over with the system tools. Let’s look how far we can get.</p>
-<p>A first <code>grep</code> gets every line with a name tag.</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | head
-    &lt;tag k=&quot;name&quot; v=&quot;Dingden&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Bocholt&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Köln&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Herne&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Lünen&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Alstedde&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Heggen&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Herzebrock-Clarholz&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Dortmund&quot;/&gt;
-    &lt;tag k=&quot;name&quot; v=&quot;Schlangen&quot;/&gt;</code></pre>
-<p>Looks promising. With a <code>cut</code> I can extract the values of the tag.</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | cut -d\&quot; -f4 | head
-Dingden
-Bocholt
-Köln
-Herne
-Lünen
-Alstedde
-Heggen
-Herzebrock-Clarholz
-Dortmund
-Schlangen</code></pre>
-<p>At this point, you can get a unique sorted list with</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | cut -d\&quot; -f4 | sort | uniq | head
-Aachen
-Aan de Popelaar
-Aandeschool
-Aarmühle
-Aaseestadt
-Abbenroth
-Abenden
-Abstoß
-Abtsküche
-Achterberg</code></pre>
-<p>As a result we have</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-cities.osm | cut -d\&quot; -f4 | sort | uniq | wc -l
-7725</code></pre>
-<p>unique elements.</p>
-<h1 id="streets">Streets</h1>
-<pre><code>$ osmosis --read-pbf nordrhein-westfalen-latest.osm.pbf \
-&gt; --wkv keyValueList=highway.residential \
-&gt; --tf reject-nodes \
-&gt; --tf reject-relations \
-&gt; --write-xml nrw-streets.osm
-Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Osmosis Version 0.40.1
-Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Preparing pipeline.
-Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Launching pipeline execution.
-Jun 28, 2017 08:34:04 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Pipeline executing, waiting for completion.
-Jun 28, 2017 08:35:11 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Pipeline complete.
-Jun 28, 2017 08:35:11 PM org.openstreetmap.osmosis.core.Osmosis run
-INFORMATION: Total execution time: 66564 milliseconds.</code></pre>
-<p>This result contains only <a href="http://wiki.openstreetmap.org/wiki/Way">way xml nodes</a> containing a <a href="http://wiki.openstreetmap.org/wiki/Key:highway">highway tag</a> with the value <code>residential</code>.</p>
-<pre><code>&lt;way id=&quot;455771&quot; version=&quot;15&quot; timestamp=&quot;2017-03-09T07:41:37Z&quot; uid=&quot;67862&quot; user=&quot;HolgerJeromin&quot; changeset=&quot;46719636&quot;&gt;
-  &lt;nd ref=&quot;290215666&quot;/&gt;
-  &lt;nd ref=&quot;2704621&quot;/&gt;
-  &lt;nd ref=&quot;1256434820&quot;/&gt;
-  &lt;nd ref=&quot;1834309845&quot;/&gt;
-  &lt;nd ref=&quot;2896578753&quot;/&gt;
-  &lt;nd ref=&quot;2704622&quot;/&gt;
-  &lt;nd ref=&quot;2704623&quot;/&gt;
-  &lt;tag k=&quot;highway&quot; v=&quot;living_street&quot;/&gt;
-  &lt;tag k=&quot;lit&quot; v=&quot;yes&quot;/&gt;
-  &lt;tag k=&quot;name&quot; v=&quot;Ernst-Meurin-Straße&quot;/&gt;
-  &lt;tag k=&quot;surface&quot; v=&quot;paving_stones&quot;/&gt;
-&lt;/way&gt;    </code></pre>
-<p>Ways with a name tag are usually urban ways. All other ways will be filtered.</p>
-<p>The names can be extracted on the same way, like it is done with the cities.</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq | head
-55er Straße
-(A7)
-Aabach Aue
-Aabauerschaft
-Aachener Ende
-Aachener Glacis
-Aachener Gracht
-Aachener Platz
-Aachener Straße
-Aachener Weg</code></pre>
-<p>The North rhine westphalia file contains</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq | wc -l
-71787</code></pre>
-<p>unique streets.</p>
-<p>If you want to know, how often a street name is used in North rhine westphalia, you can extend the query like</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | head -n 20
-    749 Bahnhofstraße
-    651 Schulstraße
-    640 Gartenstraße
-    618 Bergstraße
-    574 Kirchstraße
-    493 Bachstraße
-    478 Ringstraße
-    473 Mühlenstraße
-    457 Schillerstraße
-    434 Dorfstraße
-    428 Breslauer Straße
-    408 Goethestraße
-    402 Jahnstraße
-    400 Lindenstraße
-    397 Feldstraße
-    394 Hauptstraße
-    374 Wiesenstraße
-    372 Mühlenweg
-    368 Schützenstraße
-    359 Waldstraße</code></pre>
-<p>This can be useful, if you like to use the top <code>n</code> street names of the whole list.</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | \
-&gt; head -n 20 | sed -e &#39;s/^[[:space:]]*//&#39; | cut -d&#39; &#39; -f2-
-Bahnhofstraße
-Schulstraße
-Gartenstraße
-Bergstraße
-Kirchstraße
-Bachstraße
-Ringstraße
-Mühlenstraße
-Schillerstraße
-Dorfstraße
-Breslauer Straße
-Goethestraße
-Jahnstraße
-Lindenstraße
-Feldstraße
-Hauptstraße
-Wiesenstraße
-Mühlenweg
-Schützenstraße
-Waldstraße</code></pre>
-<p>This is similar to the previous query. First remove leading spaces with <code>sed</code>, then show all content after the first space occurrence with <code>cut</code>. This will reduce the occurrence of false positive matches. With a increasing number of occurrences, the possibility, that the match is a real street name increases.</p>
-<p>If you like to use only those street names, which occurs more than ten times you can query like</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; nrw-streets.osm | cut -d\&quot; -f4 | sort | \
-&gt; uniq -c | sort -rn | sed -e &#39;s/^[[:space:]]*//&#39; | \
-&gt; awk &#39;$1 &gt; 10 { print $0}&#39; | cut -d&#39; &#39; -f2- | wc -l
-3352</code></pre>
-<p>If you need more streets, matching the above requirements, you can take a bigger pbf file. For non German names, just choose an other country.</p>
-<p>The query above for Belgium looks like</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; belgium-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | \ 
-&gt; sed -e &#39;s/^[[:space:]]*//&#39; | awk &#39;$1 &gt; 10 { print $0}&#39; | cut -d&#39; &#39; -f2- | wc -l
-1778</code></pre>
-<p>The top 20 streets for Belgium are</p>
-<pre><code>$ grep &#39;k=&quot;name&quot;&#39; belgium-streets.osm | cut -d\&quot; -f4 | sort | uniq -c | sort -rn | \
-&gt; sed -e &#39;s/^[[:space:]]*//&#39; | awk &#39;$1 &gt; 10 { print $0}&#39; | cut -d&#39; &#39; -f2- | head -n 20
-Kerkstraat
-Molenstraat
-Nieuwstraat
-Schoolstraat
-Stationsstraat
-Kapelstraat
-Veldstraat
-Groenstraat
-Kasteelstraat
-Kloosterstraat
-Broekstraat
-Bosstraat
-Rue du Moulin
-Dorpsstraat
-Rue de l&amp;apos;Église
-Berkenlaan
-Beukenlaan
-Bergstraat
-Lindestraat
-Hoogstraat</code></pre>
-<p>Looks slightly different, right?</p>
-<p>With these flat files you can generate a combination of streets, cities and postal codes. For the postal codes, a random number generator should fit my needs. This will also work for street numbers. With different pbf country files, I can generate localized address test data.</p>]]></summary>
 </entry>
 
 </feed>

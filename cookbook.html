@@ -262,6 +262,9 @@ iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex</code></pre>
 Sat Apr 15 13:12:00 CEST 2017</code></pre>
 <h2 id="xclip">xclip</h2>
 <pre><code>cat id_rsa.pub | xclip -selection clipboard</code></pre>
+<h2 id="brightness">brightness</h2>
+<pre><code>$ sudo echo 800 &gt; /sys/class/backlight/intel_backlight/brightness</code></pre>
+<p>sets the current brightness to <code>800</code>. (1500 is default)</p>
 <h2 id="gcalcli">gcalcli</h2>
 <p>Working with the Google calendar on console</p>
 <p>put a <code>.gcalclirc</code> in users home directory</p>

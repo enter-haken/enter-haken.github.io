@@ -51,15 +51,9 @@
 <!--more-->
 <h1 id="architecture">architecture</h1>
 <p>The architecture for <code>rasmus</code> looks like</p>
-<div class="figure">
-<img src="../images/rasmus_concept.png" />
-
-</div>
+<p><img src="../images/rasmus_concept.png" /></p>
 <p>The heart of <code>rasmus</code> is its PostgreSQL database. <code>ramsus</code> uses the idea of the <a href="../posts/2017-08-07-database-architecture-part3.html">database gate keeper</a>. Data transformation happens within the database, as long no business logic is required.</p>
-<div class="figure">
-<img src="../images/rasmus_information_flow.png" />
-
-</div>
+<p><img src="../images/rasmus_information_flow.png" /></p>
 <h1 id="backend">backend</h1>
 <p>Because of the event driven approach and the desired robustness, I choose <a href="https://elixir-lang.org/">elixir</a> as a backend language. I don’t expect massive number crunching, so I take the road with the Erlang VM.</p>
 <p>A famous web framework in the elixir universe is the <a href="https://phoenixframework.org/">phoenix framework</a>. There is a lot of boiler plate and <a href="https://hexdocs.pm/mix/Mix.html">mix</a> tasks involved, so I bootstrap the backend for now and add what is needed.</p>
@@ -145,10 +139,7 @@ end</code></pre>
 <p>All other user interaction will be done with a UI library. <a href="https://material-ui.com/">material-ui</a> is a mature UI library based on react. Having a react based application, <a href="https://github.com/facebook/create-react-app">create-react-app</a> will give you a good toolchain.</p>
 <h1 id="example">example</h1>
 <p>Coming back to the bookmark context problem, I have described some parts of <code>rasmus</code> as links to github.</p>
-<div class="figure">
-<img src="../images/rasmus_frontend.png" />
-
-</div>
+<p><img src="../images/rasmus_frontend.png" /></p>
 <p>This is just a first throw. If you like the idea, you can test a static <a href="../example/rasmus/alpha/index.html">alpha version</a> of the frontend, to make yourself a picture. You can also checkout the <a href="https://github.com/enter-haken/rasmus">sources</a>, if you like.</p>
 
         </section>

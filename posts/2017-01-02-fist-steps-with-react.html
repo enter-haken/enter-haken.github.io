@@ -50,10 +50,7 @@
 <!--more-->
 <p>Let us take a simple Blog engine as an example. You can setup a new react project with <code>create-react-app Blog</code>. This command creates a new folder named <code>Blog</code> and installs a bunch of tools in the project directory.</p>
 <p>With <code>npm start</code> you can take a first look of the generated result. It should look like</p>
-<div class="figure">
-<img src="../images/react-scaffolded-app.png" />
-
-</div>
+<p><img src="../images/react-scaffolded-app.png" /></p>
 <pre><code>Compiled successfully!
 
 The app is running at:
@@ -172,10 +169,7 @@ export default BlogPost;</code></pre>
 <p>This component will only render property data.</p>
 <pre><code>&lt;BlogPost title=&quot;test&quot; subTitle=&quot;test sub&quot; text=&quot;lorem ipsum&quot; /&gt;</code></pre>
 <p>will be rendered to</p>
-<div class="figure">
-<img src="../images/card-blog-test.png" />
-
-</div>
+<p><img src="../images/card-blog-test.png" /></p>
 <p>How do we get our json blog data into our application. For our small example, we extend our <code>App.js</code> to a statefull component. The data will be loaded after application start.</p>
 <p>A good place for this is the <a href="https://facebook.github.io/react/docs/react-component.html#componentdidmount">componentDidMount</a> function. Changes on state will cause a rerender of the affected dom elements. We will override this method with.</p>
 <pre><code>componentDidMount(){
@@ -211,10 +205,7 @@ export default BlogPost;</code></pre>
 }</code></pre>
 <p>The <code>state.blogPosts</code> must be mapped to react components. Due to the JSX extensions, the <code>BlogPost</code> Component can be returned by a simple function. The key property is necessary for react, to identify the dom element, to be rendered on change.</p>
 <p>After fetching the data the <code>App.js</code> will look like</p>
-<div class="figure">
-<img src="../images/card-blog-example.png" />
-
-</div>
+<p><img src="../images/card-blog-example.png" /></p>
 <p>Our <a href="../example/react/blog/v1/index.html">v1</a> can display blog data coming from a server (json file). For a <a href="../posts/2016-03-25-mvp.html">skateboard</a> this is ok for now. You can review the source on <a href="https://github.com/enter-haken/reactBlogExample">Github</a></p>
 
         </section>

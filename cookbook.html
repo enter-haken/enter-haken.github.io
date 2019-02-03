@@ -45,10 +45,20 @@
 <h1 id="snippet">snippet</h1>
 <p>remove empty lines from output</p>
 <pre><code>sed '/^\s*$/d'</code></pre>
+<h1 id="loc">loc</h1>
 <p>count lines of code (simple)</p>
 <pre><code>find . -name '*.extension' | xargs wc -l</code></pre>
 <p>same as above without emtpy lines and comments for erlang files</p>
-<pre><code>find . -name '*.erl' | xargs cat | sed -e '/^%/d' -e '/^\s*$/d' | wc -l</code></pre>
+<pre><code>$ find . -name '*.erl' | \ 
+&gt; xargs cat | \
+&gt; sed -e '/^%/d' -e '/^\s*$/d' | \
+&gt; wc -l</code></pre>
+<p>for <code>elixir</code> projects</p>
+<pre><code>$ find . -type f \( -iname \*.ex -o -iname \*.eex -o -iname \*.exs  \) | \
+&gt; grep -v deps | \
+&gt; xargs cat | \
+&gt; sed -e  '/^\s*$/d' | \
+&gt; wc -l</code></pre>
 <h1 id="bash">bash</h1>
 <pre><code>HISTSIZE=&quot;&quot;</code></pre>
 <p>or</p>
@@ -73,8 +83,8 @@ alias eqw='equery w'
 alias current=&quot;sudo genlop -c&quot;</code></pre>
 <h1 id="git">git</h1>
 <p>pull all repositories located in sub directories, assuming there are only subdirectories in the current directory</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" title="1"><span class="co">#!/bin/bash</span></a>
-<a class="sourceLine" id="cb8-2" title="2"><span class="fu">ls</span> <span class="kw">|</span> <span class="fu">xargs</span> -I{} <span class="fu">git</span> -C {} <span class="ex">pull</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="fu">ls</span> <span class="kw">|</span> <span class="fu">xargs</span> -I{} <span class="fu">git</span> -C {} <span class="ex">pull</span></a></code></pre></div>
 <h2 id="reset-a-single-file">reset a single file</h2>
 <pre><code>git checkout HEAD -- fileName.xxx</code></pre>
 <h2 id="aliases">aliases</h2>

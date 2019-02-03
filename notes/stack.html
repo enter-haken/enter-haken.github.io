@@ -98,21 +98,22 @@ Available profile symlink targets:
   [26]  default/linux/amd64/17.0/x32 (dev)
   ...</code></pre>
 <p>choose a suitable profile.</p>
-<p>For a minimal desktop system the profile <code>13</code> is suitable.</p>
+<p>For a minimal desktop system the profile <code>16</code> is suitable.</p>
 <p>A system update after a profile change</p>
 <pre><code>emerge --sync &amp;&amp; emerge -uNDqv world</code></pre>
 <p>can take several hours of compile time.</p>
 <h1 id="beyond-base-system">beyond base system</h1>
 <p>After having a reboot consistent system, more packages can be installed</p>
 <h2 id="portage-tools">portage tools</h2>
-<pre><code>app-portage/eix
-app-portage/genlop
-app-portage/gentoolkit</code></pre>
 <p>First of all, some portage tools should be installed.</p>
+<h3 id="app-portageeix">app-portage/eix</h3>
 <p><code>app-portage/eix</code> has some <a href="https://wiki.gentoo.org/wiki/Eix">features</a>, including searching the portage tree.</p>
+<h3 id="app-portagegenlop">app-portage/genlop</h3>
 <p>If you want to estimate a package upgrade time, <code>app-portage/genlop</code> is your friend. A call to</p>
 <pre><code>$ genlop -c</code></pre>
-<p>shows the current emerge time and the estimated time. Since the logs are parsed to retrieve the estimated time, the estimation only works for packages that have already been emerged.</p>
+<p>shows the current emerge time and the estimated time.</p>
+<p>Since the logs are parsed to retrieve the estimated time, the estimation only works for packages that have already been emerged.</p>
+<h3 id="app-portagegentoolkit">app-portage/gentoolkit</h3>
 <p>The <code>app-portage/gentoolkit</code> package has some portage tools, you need to work with a Gentoo system.</p>
 <p>A often used tool is <code>equery</code>. It helps you to get information about a Gentoo package.</p>
 <pre><code>$ equery
@@ -142,63 +143,51 @@ modules (short name)
  (s)ize                  display total size of all files owned by PKG
  (u)ses                  display USE flags for PKG
  (w)hich                 print full path to ebuild for PKG</code></pre>
-<p>Because you use this tool so often, it is practical to create some aliases in your <code>.bashrc</code></p>
-<pre><code>alias eqf='equery f'
-alias equ='equery u'
-alias eqh='equery h'
-alias eqa='equery a'
-alias eqb='equery b'
-alias eql='equery l'
-alias eqd='equery d'
-alias eqg='equery g'
-alias eqc='equery c'
-alias eqk='equery k'
-alias eqm='equery m'
-alias eqy='equery y'
-alias eqs='equery s'
-alias eqw='equery w'</code></pre>
+<p>Because you use this tool so often, it is practical to create some <a href="../cookbook#gentoo-specific-aliases">aliases</a> in your <code>.bashrc</code></p>
 <h2 id="version-control">version control</h2>
-<pre><code>dev-vcs/git
-dev-vcs/tig</code></pre>
-<p>Working with version control is a mandatory tasks for a software developer. <code>git</code> is the most widely used version control software. Although you can easily use <code>git</code> from command line, <code>tig</code> has a ncurses-based text-mode interface. It’s handy, to get a quick overview of a repository.</p>
-<h2 id="vim">vim</h2>
+<h3 id="dev-vcsgit">dev-vcs/git</h3>
+<p>Working with version control is a mandatory tasks for a software developer. <code>git</code> is the most widely used version control software.</p>
+<h3 id="dev-vcstig">dev-vcs/tig</h3>
+<p>Although you can easily use <code>git</code> from command line, <code>tig</code> has a ncurses-based text-mode interface. It’s handy, to get a quick overview of a repository.</p>
+<h3 id="vim">vim</h3>
 <pre><code>app-editors/vim</code></pre>
 <p>It does not matter which editor you use, it should only suit you best. In my case it is <code>vim</code>. You can see more about <code>vim</code> in my <a href="../notes/vim">notes</a>.</p>
 <h2 id="system">system</h2>
-<pre><code>app-admin/sudo
-net-misc/dhcpcd
-net-wireless/wpa_supplicant
-net-misc/ntp
-sys-process/htop</code></pre>
-<p>There are some system specific packages, which slightly depends on your setup. <code>sudo</code> let you execute commands as an other user. This is often used in conjunction with root actions.</p>
+<h3 id="app-adminsudod">app-admin/sudod</h3>
+<p>There are some system specific packages, which slightly depends on your setup. <code>sudo</code> let you execute commands as an other user. This is often used in conjunction with rootn actions.</p>
+<h3 id="net-miscdhcpcd">net-misc/dhcpcd</h3>
 <p><code>net-misc/dhcpcd</code> is a dhcp daemon, which should be started during boot, so that the network is up and running.</p>
-<p>When you use a wireless network, <code>net-wireless/wpa_supplicant</code> can help you configure a wireless network. The console version of the config tool is slightly more complicated than the X11 version. See the <a href="https://wiki.gentoo.org/wiki/Wpa_supplicant">documentation</a> for further information.</p>
+<h3 id="net-wirelesswpa_supplicant">net-wireless/wpa_supplicant</h3>
+<p>When you use a wireless network, <code>net-wireiless/wpa_supplicant</code> can help you configure a wireless network. The console version of the config tool is slightly more complicated than the X11 version. See the <a href="https://wiki.gentoo.org/wiki/Wpa_supplicant">documentation</a> for further information.</p>
+<h3 id="net-miscntp">net-misc/ntp</h3>
 <p>The <code>net-misc/ntp</code> daemon is not quiet necessary, but convenient. It sets the system time, when it is necessary.</p>
+<h3 id="sys-processhtop">sys-process/htop</h3>
 <p><code>sys-process/htop</code> is a process monitor, where you can also kill processes if necessary.</p>
 <h2 id="terminal-bash">terminal / bash</h2>
-<pre><code>app-misc/ranger
-app-text/tree
+<h3 id="app-miscranger">app-misc/ranger</h3>
+<p>When you need a file manager with VI key bindings, <code>app-misc/ranger</code> is your friend.</p>
+<pre><code>app-text/tree
 sys-apps/the_silver_searcher</code></pre>
-<h2 id="language-specific-package-managers">language specific package managers</h2>
+<h2 id="non-gentoo-packages">non Gentoo packages</h2>
 <pre><code>dev-python/pip
 net-libs/nodejs
 dev-haskell/cabal</code></pre>
-<p>There are some applications, which can be installed via other package managers.</p>
-<p>They can be installed via</p>
+<p>There are some applications, which can be installed via other package managers They can be installed via</p>
 <pre><code>$ pip install pgcli --user</code></pre>
 <p>or</p>
 <pre><code>$ npm install sass -g</code></pre>
 <p>or</p>
 <pre><code>$ cabal install hakyll</code></pre>
 <h2 id="x11">x11</h2>
-<pre><code>app-admin/conky
+<pre><code>x11-base/xorg-server
+
+app-admin/conky
 app-text/evince
 app-text/texlive
 mail-client/thunderbird-bin
 media-gfx/graphviz
 media-gfx/feh
 x11-apps/xsetroot
-x11-base/xorg-server
 x11-misc/dmenu
 x11-misc/xscreensaver
 x11-terms/xterm

@@ -24,6 +24,7 @@
           gtag('js', new Date());
           gtag('config', gaProperty, { 'anonymize_ip' : true });
         </script>
+        <script src="js/vis.min.js"></script>
     </head>
     <body>
         <section id="navigation">
@@ -288,6 +289,16 @@ alias month=&quot;gcalcli calm&quot;
 alias todo=&quot;gcalcli agenda&quot;</code></pre>
 <p>Get the next three weeks</p>
 <pre><code>week 3</code></pre>
+<h2 id="typescript">typescript</h2>
+<p>Automatic compile typescript application.</p>
+<p>First create a make target like</p>
+<pre><code>.PHONY: tsc
+tsc:     
+    rm *build_artefacts* || true
+    tsc --build tsconfig.json</code></pre>
+<p>Then create an <code>alias</code> like</p>
+<pre><code>alias notify='while true; do inotifywait -re modify *root_of_ts_sources' &amp;&amp; make tsc; done'</code></pre>
+<p>which deletes the build artefacts if needed, and recompile the application.</p>
         </section>
 
         <section id="footer"> 

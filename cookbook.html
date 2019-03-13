@@ -82,10 +82,14 @@ alias eqs='equery s'
 alias eqw='equery w'
 
 alias current=&quot;sudo genlop -c&quot;</code></pre>
+<h2 id="silver-searcher">silver searcher</h2>
+<p>When you use the <a href="https://github.com/ggreer/the_silver_searcher">silver searcher</a> code search, you can add a <code>.ignore</code> file to the root folder of your application. This file is similar to <code>.gitignore</code> files. Due to the double asterix is <a href="https://github.com/ggreer/the_silver_searcher/issues/530">not working yet</a>, a quick find can help you to find the files, which should be excluded. e.g.</p>
+<pre><code>$ find priv/static/libs/ -type f \( -name &quot;*.js&quot; -o -name &quot;*.css&quot; -o -name &quot;*.map&quot; \)</code></pre>
+<p>will find all files with the extension <code>*.js</code>, <code>*.css</code>, or <code>*.map</code>. This is helpfull, when you want to exclude build artefacts.</p>
 <h1 id="git">git</h1>
 <p>pull all repositories located in sub directories, assuming there are only subdirectories in the current directory</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1"><span class="co">#!/bin/bash</span></a>
-<a class="sourceLine" id="cb9-2" title="2"><span class="fu">ls</span> <span class="kw">|</span> <span class="fu">xargs</span> -I{} <span class="fu">git</span> -C {} <span class="ex">pull</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" title="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="fu">ls</span> <span class="kw">|</span> <span class="fu">xargs</span> -I{} <span class="fu">git</span> -C {} <span class="ex">pull</span></a></code></pre></div>
 <h2 id="reset-a-single-file">reset a single file</h2>
 <pre><code>git checkout HEAD -- fileName.xxx</code></pre>
 <h2 id="aliases">aliases</h2>
